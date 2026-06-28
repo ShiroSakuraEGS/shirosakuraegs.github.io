@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="頭前溪守護者：擔任半導體廠水治理工程師的策略遊戲">
+<title>頭前溪守護者 — 晶片與溪水的故事</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script>tailwind.config={theme:{extend:{fontFamily:{serif:['"Noto Serif TC"','PMingLiU','serif'],sans:['Nunito','"Noto Serif TC"','sans-serif']}}}}</script>
+<style>
+body{font-family:'Nunito','Noto Serif TC',sans-serif;}
+[v-cloak]{display:none;}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:#F0EAE0;border-radius:99px;}
+::-webkit-scrollbar-thumb{background:#C4D7B2;border-radius:99px;}
+.pixel{image-rendering:pixelated;image-rendering:crisp-edges;}
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes bobS{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-5px) rotate(2deg)}}
+@keyframes waveF{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+@keyframes fishS{0%,100%{transform:translateX(0)}50%{transform:translateX(18px)}}
+@keyframes egretB{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes cloudL{0%{transform:translateX(0)}100%{transform:translateX(-22px)}}
+@keyframes cloudR{0%{transform:translateX(0)}100%{transform:translateX(22px)}}
+@keyframes scUp{from{transform:scale(.93);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes slIn{from{transform:translateY(18px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes fdIn{from{opacity:0}to{opacity:1}}
+@keyframes glPulse{0%,100%{box-shadow:0 0 0 0 rgba(134,187,140,.4)}50%{box-shadow:0 0 0 10px rgba(134,187,140,0)}}
+@keyframes smokeR{0%{transform:translateY(0) scale(1);opacity:.6}100%{transform:translateY(-24px) scale(1.8);opacity:0}}
+@keyframes crPulse{0%,100%{opacity:1}50%{opacity:.65}}
+@keyframes spinS{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.a-float{animation:floatY 3s ease-in-out infinite;}
+.a-bob{animation:bobS 2.8s ease-in-out infinite;}
+.a-wave{animation:waveF 5s linear infinite;}
+.a-wave2{animation:waveF 8s linear infinite;}
+.a-fish{animation:fishS 4s ease-in-out infinite;}
+.a-egret{animation:egretB 2.2s ease-in-out infinite;}
+.a-cl{animation:cloudL 14s ease-in-out infinite alternate;}
+.a-cr{animation:cloudR 16s ease-in-out infinite alternate;}
+.a-scup{animation:scUp .35s ease-out forwards;}
+.a-slin{animation:slIn .4s ease-out forwards;}
+.a-fdin{animation:fdIn .5s ease-out forwards;}
+.a-glow{animation:glPulse 2.5s ease-in-out infinite;}
+.a-smoke{animation:smokeR 2.5s ease-out infinite;}
+.a-crisis{animation:crPulse 1.5s ease-in-out infinite;}
+.a-spin{animation:spinS 8s linear infinite;}
+.btn-p{transition:all .12s ease;}
+.btn-p:hover{transform:translateY(-2px);}
+.btn-p:active{transform:translateY(2px);}
+.book{background:linear-gradient(145deg,#FFFEF7,#FFF9ED 40%,#FFFEF7);box-shadow:4px 4px 20px rgba(0,0,0,.14),-1px -1px 6px rgba(255,255,255,.8);}
+.pbar{height:6px;border-radius:99px;background:#E2E8F0;overflow:hidden;}
+.pfill{height:100%;border-radius:99px;transition:width .5s cubic-bezier(.4,0,.2,1);}
+.tab-b{transition:all .2s ease;border-bottom:2px solid transparent;}
+.tab-b.act{color:#2C4A21;border-bottom-color:#5A9E62;background:white;}
+.modal-bg{background:rgba(0,0,0,.45);backdrop-filter:blur(5px);}
+.fcard{transition:all .2s ease;}
+.fcard:hover{transform:translateY(-1px);box-shadow:0 4px 15px rgba(0,0,0,.08);}
+</style>
+</head>
+<body class="bg-[#EDE8E0] min-h-screen">
+<div id="app" v-cloak class="min-h-screen">
+
+<!-- ===== INTRO ===== -->
+<div v-if="gameState==='intro'" class="min-h-screen bg-gradient-to-br from-[#D4EDDA] via-[#EDE8E0] to-[#C5D9F0] flex items-center justify-center p-4">
+  <div class="max-w-xl w-full a-scup">
+    <div class="book rounded-3xl p-7 border border-[#C4D7B2]/60 relative overflow-hidden">
+      <div class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-[#A0C49D]/20 to-transparent rounded-bl-full pointer-events-none"></div>
+      <div class="text-center mb-5">
+        <div class="flex justify-center mb-3">
+          <div class="a-float">
+            <svg class="pixel" width="72" height="88" viewBox="0 0 18 22" xmlns="http://www.w3.org/2000/svg">
+              <rect x="4" y="0" width="10" height="2" fill="#1D4ED8"/><rect x="3" y="2" width="12" height="1" fill="#2563EB"/>
+              <rect x="2" y="3" width="14" height="1" fill="#1E40AF"/><rect x="1" y="4" width="16" height="1" fill="#1E40AF"/>
+              <rect x="4" y="5" width="10" height="7" fill="#FDE68A"/>
+              <rect x="5" y="7" width="2" height="2" fill="#1E293B"/><rect x="11" y="7" width="2" height="2" fill="#1E293B"/>
+              <rect x="6" y="7" width="1" height="1" fill="white"/><rect x="12" y="7" width="1" height="1" fill="white"/>
+              <rect x="6" y="10" width="6" height="1" fill="#D97706"/>
+              <rect x="4" y="12" width="10" height="7" fill="#1D4ED8"/>
+              <rect x="7" y="12" width="4" height="2" fill="#60A5FA"/>
+              <rect x="5" y="15" width="3" height="2" fill="#2563EB"/>
+              <rect x="1" y="12" width="3" height="5" fill="#1D4ED8"/><rect x="14" y="12" width="3" height="5" fill="#1D4ED8"/>
+              <rect x="0" y="16" width="4" height="2" fill="#FDE68A"/><rect x="14" y="16" width="4" height="2" fill="#FDE68A"/>
+              <rect x="5" y="19" width="3" height="3" fill="#1E3A5F"/><rect x="10" y="19" width="3" height="3" fill="#1E3A5F"/>
+            </svg>
+          </div>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-black font-serif text-[#2C4A21]">頭前溪守護者</h1>
+        <p class="text-sm font-serif text-[#5A9E62] font-semibold mt-1">晶片與溪水的故事</p>
+        <div class="flex justify-center gap-2 mt-2 text-xl">💧🏭🌿🐟🦢</div>
+      </div>
+
+      <div v-if="introStep===0" class="a-fdin space-y-4">
+        <div class="bg-[#F0FFF4] border-l-4 border-[#86BB8C] p-4 rounded-r-2xl">
+          <p class="text-sm font-serif text-[#2C4A21] leading-relaxed font-semibold italic">「有一條溪，叫做頭前溪。她從新竹的山嵐流淌而下，孕育了魚蝦、白鷺，也滋養了農田。」</p>
+        </div>
+        <p class="text-sm text-[#5C544F] leading-relaxed">然而，一座世界矚目的<strong class="text-[#1D4ED8]">先進半導體晶圓廠</strong>在溪旁崛起。製造每一片晶片，都需要純淨度超越礦泉水百倍的<strong class="text-[#0284C7]">超純水（UPW）</strong>。</p>
+        <p class="text-sm text-[#5C544F] leading-relaxed">你，是剛上任的<strong class="text-[#2C4A21] font-bold">水治理工程師小藍</strong>。任務：確保工廠不缺水，也守護頭前溪的每一條生命。</p>
+        <div class="grid grid-cols-3 gap-2 text-center text-xs">
+          <div class="bg-blue-50 p-2 rounded-xl border border-blue-100"><div class="text-lg mb-1">🔬</div><div class="text-blue-700 font-bold">研究用水技術</div><div class="text-blue-600">提升收益</div></div>
+          <div class="bg-amber-50 p-2 rounded-xl border border-amber-100"><div class="text-lg mb-1">⛈️</div><div class="text-amber-700 font-bold">應對河川危機</div><div class="text-amber-600">確保供水</div></div>
+          <div class="bg-green-50 p-2 rounded-xl border border-green-100"><div class="text-lg mb-1">🌿</div><div class="text-green-700 font-bold">守護溪流生態</div><div class="text-green-600">永續共存</div></div>
+        </div>
+      </div>
+
+      <div v-if="introStep===1" class="a-fdin space-y-3">
+        <h3 class="font-serif font-bold text-[#4A3E3D] border-b border-[#C4D7B2] pb-2">⚙️ Hardcore 遊戲規則</h3>
+        <div class="space-y-2 text-xs">
+          <div class="flex items-start gap-2 bg-purple-50 p-2.5 rounded-xl"><span class="text-base mt-0.5">🔬</span><div class="text-[#5C544F] leading-relaxed"><strong class="text-purple-700">研究調查系統</strong>：解鎖半導體用水技術可提升市值，但每項研究都會<em class="text-red-600 not-italic font-bold">永久增加每日超純水需求</em>！越研究越強，但也越渴。</div></div>
+          <div class="flex items-start gap-2 bg-amber-50 p-2.5 rounded-xl"><span class="text-base mt-0.5">⛈️</span><div class="text-[#5C544F] leading-relaxed"><strong class="text-amber-700">河川危機（每~5天）</strong>：颱風高濁度、夏日乾旱、化學污染、藻華、產能爆炸。必須提前布局！</div></div>
+          <div class="flex items-start gap-2 bg-red-50 p-2.5 rounded-xl"><span class="text-base mt-0.5">💥</span><div class="text-[#5C544F] leading-relaxed"><strong class="text-red-700">三重破產條件</strong>：市值跌破$120億、資金歸零、或連續3天稼動率&lt;60%觸發信用崩潰！</div></div>
+          <div class="flex items-start gap-2 bg-emerald-50 p-2.5 rounded-xl"><span class="text-base mt-0.5">🏆</span><div class="text-[#5C544F] leading-relaxed"><strong class="text-emerald-700">勝利</strong>：撐過30天，市值≥$2000億＋河川健康≥80%。</div></div>
+        </div>
+      </div>
+
+      <div class="flex justify-between items-center mt-6 pt-4 border-t border-[#C4D7B2]/40">
+        <button v-if="introStep>0" @click="introStep--" class="text-[#8B7E74] hover:text-[#4A3E3D] text-sm font-semibold px-3 py-1.5">← 上一頁</button>
+        <div v-else></div>
+        <div class="flex gap-1.5">
+          <div :class="['w-2.5 h-2.5 rounded-full',introStep===0?'bg-[#86BB8C] scale-125':'bg-[#C4D7B2]']"></div>
+          <div :class="['w-2.5 h-2.5 rounded-full',introStep===1?'bg-[#86BB8C] scale-125':'bg-[#C4D7B2]']"></div>
+        </div>
+        <button v-if="introStep<1" @click="introStep++" class="bg-[#86BB8C] hover:bg-[#5A9E62] text-white font-bold text-sm px-5 py-2 rounded-xl btn-p shadow-[0_3px_0_#4A7A52]">繼續 →</button>
+        <button v-else @click="startGame" class="bg-gradient-to-r from-[#2C4A21] to-[#3A6B35] hover:from-[#1A3014] text-white font-bold text-sm px-6 py-2.5 rounded-xl btn-p shadow-[0_4px_0_#1A3014] a-glow">🎮 開始守護頭前溪！</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PLAYING ===== -->
+<div v-if="gameState==='playing'" class="min-h-screen flex flex-col a-fdin">
+
+  <!-- HEADER -->
+  <header class="bg-white/85 backdrop-blur-sm border-b border-[#C4D7B2]/60 px-3 sm:px-5 py-2.5 flex flex-col sm:flex-row justify-between items-center gap-2 sticky top-0 z-30 shadow-sm">
+    <div class="flex items-center gap-2.5">
+      <div class="bg-gradient-to-br from-[#A0C49D] to-[#5A9E62] rounded-xl p-1.5"><span class="text-xl">💧</span></div>
+      <div>
+        <h1 class="text-sm sm:text-base font-serif font-black text-[#2C4A21]">頭前溪守護者</h1>
+        <p class="text-[9px] text-[#8B7E74]">晶片與溪水的故事</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-center">
+      <div class="bg-[#E8F5E9] border border-[#A0C49D] px-2.5 py-1 rounded-lg text-xs font-bold text-[#2C4A21]">📅 第{{ day }}/30天</div>
+      <div v-if="currentEvent" :class="['px-2.5 py-1 rounded-lg text-xs font-bold text-white a-crisis',evtBg(currentEvent)]">{{ eventData[currentEvent].icon }} {{ eventDaysLeft }}天</div>
+      <div v-if="researchingId" class="bg-purple-100 border border-purple-300 px-2.5 py-1 rounded-lg text-xs font-bold text-purple-700 animate-pulse">🔬 研究中 {{ researchDaysLeft }}天</div>
+      <div v-if="consecutiveLow>=2" class="bg-red-100 border border-red-400 px-2.5 py-1 rounded-lg text-xs font-bold text-red-700 a-crisis">⚠️ 低稼動 {{ consecutiveLow }}/3</div>
+      <button @click="showRules=true" class="bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-1 rounded-lg text-xs font-semibold text-amber-700">📖</button>
+      <button @click="nextDay" class="bg-[#C4D7B2] hover:bg-[#A0C49D] text-[#2C4A21] font-bold text-xs sm:text-sm px-4 sm:px-5 py-1.5 sm:py-2 rounded-xl shadow-[0_3px_0_#8EAF74] hover:shadow-[0_1px_0_#8EAF74] btn-p border border-[#8B7E74]/20 transition-all">迎向明日 🌿</button>
+    </div>
+  </header>
+
+  <!-- MAIN GRID -->
+  <main class="flex-1 p-2 sm:p-3 grid grid-cols-1 xl:grid-cols-12 gap-3 max-w-7xl mx-auto w-full">
+
+    <!-- LEFT -->
+    <section class="xl:col-span-5 space-y-3">
+
+      <!-- RIVER SCENE SVG -->
+      <div class="relative rounded-2xl overflow-hidden shadow-lg border-2 border-[#8B7E74]/20" style="height:230px;">
+        <svg class="absolute inset-0 w-full h-full" viewBox="0 0 400 230" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="gSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" :stop-color="skyTop"/><stop offset="100%" :stop-color="skyBot"/></linearGradient>
+            <linearGradient id="gWater" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" :stop-color="waterTop"/><stop offset="100%" :stop-color="waterBot"/></linearGradient>
+          </defs>
+          <!-- Sky -->
+          <rect width="400" height="230" fill="url(#gSky)"/>
+          <!-- Sun normal -->
+          <g v-if="!currentEvent||currentEvent==='ALGAE'"><circle cx="348" cy="44" r="24" fill="#FCD34D" opacity=".9"/><circle cx="348" cy="44" r="32" fill="#FDE68A" opacity=".25"/></g>
+          <!-- Drought sun -->
+          <g v-if="currentEvent==='DROUGHT'">
+            <circle cx="348" cy="40" r="28" fill="#FBBF24"/><circle cx="348" cy="40" r="38" fill="#FDE68A" opacity=".3"/>
+            <line v-for="i in 8" :key="i" :x1="348+Math.cos(i*Math.PI/4)*30" :y1="40+Math.sin(i*Math.PI/4)*30" :x2="348+Math.cos(i*Math.PI/4)*42" :y2="40+Math.sin(i*Math.PI/4)*42" stroke="#FCD34D" stroke-width="2.5" opacity=".7"/>
+          </g>
+          <!-- Normal clouds -->
+          <g v-if="!currentEvent||currentEvent==='ALGAE'||currentEvent==='EXPANSION'" class="a-cl">
+            <ellipse cx="68" cy="50" rx="38" ry="15" fill="white" opacity=".85"/><ellipse cx="88" cy="42" rx="26" ry="12" fill="white" opacity=".8"/><ellipse cx="53" cy="55" rx="22" ry="10" fill="white" opacity=".75"/>
+          </g>
+          <g v-if="!currentEvent||currentEvent==='ALGAE'||currentEvent==='EXPANSION'" class="a-cr">
+            <ellipse cx="248" cy="38" rx="42" ry="16" fill="white" opacity=".75"/><ellipse cx="268" cy="30" rx="28" ry="12" fill="white" opacity=".7"/>
+          </g>
+          <!-- Typhoon -->
+          <g v-if="currentEvent==='TYPHOON'">
+            <ellipse cx="80" cy="45" rx="65" ry="27" fill="#475569" opacity=".9"/><ellipse cx="210" cy="32" rx="85" ry="30" fill="#334155" opacity=".95"/><ellipse cx="340" cy="48" rx="68" ry="25" fill="#475569" opacity=".85"/>
+            <line v-for="j in 24" :key="j" :x1="(j-1)*17+5" :y1="85+((j-1)%5)*14" :x2="(j-1)*17+2" :y2="100+((j-1)%5)*14" stroke="#93C5FD" stroke-width="1.5" opacity=".75"/>
+          </g>
+          <!-- Pollution haze -->
+          <g v-if="currentEvent==='POLLUTION'"><ellipse cx="200" cy="90" rx="200" ry="45" fill="#7C3AED" opacity=".1"/><ellipse cx="120" cy="70" rx="100" ry="28" fill="#A78BFA" opacity=".08"/></g>
+          <!-- Mountains far -->
+          <polygon points="0,118 35,80 75,103 115,66 165,93 215,56 270,83 325,60 380,78 400,70 400,143 0,143" fill="#4ADE80" opacity=".42"/>
+          <!-- Mountains near -->
+          <polygon points="0,136 28,100 68,123 105,88 155,116 195,82 245,110 295,76 345,106 390,88 400,98 400,147 0,147" fill="#16A34A" opacity=".72"/>
+
+          <!-- FACTORY pixel art -->
+          <g transform="translate(288,80)">
+            <rect x="0" y="22" width="86" height="61" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5" rx="2"/>
+            <polygon points="-6,22 43,5 92,22" fill="#94A3B8" stroke="#64748B" stroke-width="1.5"/>
+            <rect x="8" y="32" width="13" height="11" rx="1.5" fill="#93C5FD" opacity=".85"/>
+            <rect x="28" y="32" width="13" height="11" rx="1.5" fill="#93C5FD" opacity=".8"/>
+            <rect x="48" y="32" width="13" height="11" rx="1.5" fill="#93C5FD" opacity=".8"/>
+            <rect x="68" y="32" width="10" height="11" rx="1.5" fill="#93C5FD" opacity=".75"/>
+            <rect x="8" y="50" width="13" height="11" rx="1.5" fill="#93C5FD" opacity=".75"/>
+            <rect x="28" y="50" width="13" height="11" rx="1.5" fill="#BFDBFE" opacity=".7"/>
+            <rect x="48" y="50" width="13" height="11" rx="1.5" fill="#BFDBFE" opacity=".65"/>
+            <rect x="33" y="62" width="18" height="21" rx="2" fill="#475569"/>
+            <rect x="34" y="63" width="7" height="19" fill="#334155"/><rect x="42" y="63" width="8" height="19" fill="#334155"/>
+            <rect x="57" y="-12" width="10" height="34" fill="#64748B" stroke="#475569" stroke-width="1" rx="1"/>
+            <rect x="72" y="-8" width="9" height="30" fill="#64748B" stroke="#475569" stroke-width="1" rx="1"/>
+            <circle cx="62" cy="-15" r="6" :fill="prodOk?'#F8FAFC':'#FCA5A5'" opacity=".7" class="a-smoke"/>
+            <circle cx="62" cy="-14" r="4" :fill="prodOk?'#E2E8F0':'#FECACA'" opacity=".5" class="a-smoke" style="animation-delay:.6s"/>
+            <circle cx="77" cy="-11" r="5" :fill="prodOk?'#F1F5F9':'#FCA5A5'" opacity=".6" class="a-smoke" style="animation-delay:1.2s"/>
+            <rect x="8" y="10" width="70" height="10" rx="2" fill="#1E40AF" opacity=".88"/>
+            <text x="43" y="18" text-anchor="middle" fill="white" font-size="5.5" font-family="sans-serif" font-weight="bold">晶圓廠</text>
+            <rect x="-18" y="68" width="18" height="5" fill="#3B82F6" opacity=".85" rx="1"/>
+            <circle cx="-18" cy="70" r="4" fill="#1D4ED8" opacity=".75"/>
+          </g>
+
+          <!-- River bank -->
+          <path d="M0,160 C100,152 200,168 300,155 C360,148 390,162 400,158 L400,175 L0,175Z" fill="#92400E" opacity=".5"/>
+          <!-- River -->
+          <rect x="0" y="170" width="400" height="60" fill="url(#gWater)" opacity=".95"/>
+          <!-- Wave 1 -->
+          <g class="a-wave"><path d="M0,175 C25,170 50,180 75,175 C100,170 125,180 150,175 C175,170 200,180 225,175 C250,170 275,180 300,175 C325,170 350,180 375,175 C400,170 425,180 450,175 C475,170 500,180 525,175 C550,170 575,180 600,175 L600,230 L0,230Z" :fill="waterTop" opacity=".5"/></g>
+          <!-- Wave 2 -->
+          <g class="a-wave2"><path d="M0,182 C35,178 70,186 105,182 C140,178 175,186 210,182 C245,178 280,186 315,182 C350,178 385,186 420,182 C455,178 490,186 525,182 C560,178 595,186 630,182 C665,178 700,186 735,182 C770,178 805,186 800,182 L800,230 L0,230Z" :fill="waterBot" opacity=".38"/></g>
+          <!-- Algae -->
+          <g v-if="currentEvent==='ALGAE'">
+            <ellipse cx="55" cy="177" rx="32" ry="7" fill="#10B981" opacity=".65"/>
+            <ellipse cx="195" cy="173" rx="52" ry="8" fill="#059669" opacity=".6"/>
+            <ellipse cx="335" cy="178" rx="38" ry="6" fill="#10B981" opacity=".6"/>
+          </g>
+
+          <!-- Reeds left -->
+          <line x1="15" y1="171" x2="13" y2="140" stroke="#166534" stroke-width="2.5" stroke-linecap="round"/>
+          <ellipse cx="13" cy="137" rx="4.5" ry="9" fill="#15803D" opacity=".9"/>
+          <line x1="26" y1="171" x2="28" y2="136" stroke="#166534" stroke-width="2.5" stroke-linecap="round"/>
+          <ellipse cx="28" cy="133" rx="4" ry="8.5" fill="#15803D" opacity=".88"/>
+          <line x1="38" y1="171" x2="36" y2="143" stroke="#166534" stroke-width="2" stroke-linecap="round"/>
+          <ellipse cx="36" cy="140" rx="3.5" ry="7" fill="#15803D" opacity=".85"/>
+          <circle cx="46" cy="170" r="8" fill="#22C55E" opacity=".7"/>
+          <!-- Reeds right -->
+          <line x1="230" y1="171" x2="228" y2="140" stroke="#166534" stroke-width="2" stroke-linecap="round"/>
+          <ellipse cx="228" cy="137" rx="4" ry="8" fill="#15803D" opacity=".85"/>
+          <line x1="242" y1="171" x2="244" y2="135" stroke="#166534" stroke-width="2" stroke-linecap="round"/>
+          <ellipse cx="244" cy="132" rx="3.5" ry="7.5" fill="#15803D" opacity=".82"/>
+
+          <!-- Fish (by health) -->
+          <g v-for="(fp,fi) in fishPos" :key="'f'+fi" :style="`animation:fishS ${3.5+fi*.6}s ease-in-out ${fi*.8}s infinite;transform-origin:${fp.x}px ${fp.y}px`">
+            <ellipse :cx="fp.x" :cy="fp.y" rx="9" ry="4.5" :fill="fp.c"/>
+            <polygon :points="`${fp.x-10},${fp.y-5} ${fp.x-15},${fp.y-8} ${fp.x-15},${fp.y+8} ${fp.x-10},${fp.y+5}`" :fill="fp.c"/>
+            <circle :cx="fp.x+6" :cy="fp.y-1" r="1.8" fill="#1E293B"/><circle :cx="fp.x+6.5" :cy="fp.y-1.5" r=".6" fill="white"/>
+          </g>
+
+          <!-- Egret (health≥70) -->
+          <g v-if="riverHealth>=70" transform="translate(162,150)" class="a-egret">
+            <ellipse cx="0" cy="0" rx="7" ry="10" fill="white" stroke="#E2E8F0" stroke-width=".5"/>
+            <circle cx="4" cy="-10" r="5.5" fill="white"/>
+            <polygon points="7,-9 17,-8 7,-6" fill="#FCD34D"/>
+            <circle cx="6" cy="-11" r="1.5" fill="#1E293B"/><circle cx="6.5" cy="-11.5" r=".5" fill="white"/>
+            <line x1="-2" y1="9" x2="-3" y2="22" stroke="#FCD34D" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="2" y1="9" x2="3" y2="22" stroke="#FCD34D" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="-3" y1="22" x2="-7" y2="24" stroke="#FCD34D" stroke-width="1.2"/>
+            <line x1="3" y1="22" x2="7" y2="24" stroke="#FCD34D" stroke-width="1.2"/>
+            <path d="M1,-15 C-1,-20 -4,-14 -2,-11" fill="#1E293B"/>
+          </g>
+
+          <!-- Engineer 小藍 pixel art -->
+          <g transform="translate(100,132)" class="a-bob">
+            <rect x="-9" y="-30" width="18" height="3" :fill="prodOk?'#1D4ED8':'#64748B'"/>
+            <rect x="-11" y="-27" width="22" height="2" :fill="prodOk?'#2563EB':'#94A3B8'"/>
+            <rect x="-13" y="-25" width="26" height="1.5" :fill="prodOk?'#1E40AF':'#475569'"/>
+            <rect x="-8" y="-23" width="16" height="13" fill="#FDE68A" rx="1"/>
+            <rect x="-6" y="-19" width="3" height="3" :fill="prodOk?'#1E293B':'#7F1D1D'"/>
+            <rect x="3" y="-19" width="3" height="3" :fill="prodOk?'#1E293B':'#7F1D1D'"/>
+            <rect x="-5" y="-19" width="1.5" height="1.5" fill="white" v-if="prodOk"/>
+            <rect x="4" y="-19" width="1.5" height="1.5" fill="white" v-if="prodOk"/>
+            <rect x="-7" y="-22" width="3" height="1" fill="#92400E" v-if="!prodOk"/>
+            <rect x="4" y="-22" width="3" height="1" fill="#92400E" v-if="!prodOk"/>
+            <rect x="-5" y="-13" width="10" height="2" :fill="prodOk?'#D97706':'#DC2626'" rx="1"/>
+            <rect x="-8" y="-10" width="16" height="14" :fill="prodOk?'#1D4ED8':'#475569'" rx="1"/>
+            <rect x="-4" y="-10" width="8" height="3" :fill="prodOk?'#60A5FA':'#94A3B8'"/>
+            <rect x="-13" y="-10" width="5" height="10" :fill="prodOk?'#1D4ED8':'#475569'" rx="1"/>
+            <rect x="8" y="-10" width="5" height="10" :fill="prodOk?'#1D4ED8':'#475569'" rx="1"/>
+            <rect x="-14" y="-2" width="6" height="3" fill="#FDE68A" rx="1"/>
+            <rect x="11" y="-13" width="9" height="12" fill="#F8FAFC" stroke="#94A3B8" stroke-width=".5" rx="1"/>
+            <rect x="12" y="-11" width="7" height="1" fill="#CBD5E1" opacity=".8"/>
+            <rect x="12" y="-9" width="7" height="1" fill="#CBD5E1" opacity=".8"/>
+            <rect x="12" y="-7" width="5" height="1" fill="#CBD5E1" opacity=".6"/>
+            <rect x="-7" y="4" width="6" height="9" fill="#1E3A5F" rx="1"/><rect x="1" y="4" width="6" height="9" fill="#1E3A5F" rx="1"/>
+            <rect x="-8" y="12" width="8" height="3" fill="#78350F" rx="1"/><rect x="0" y="12" width="8" height="3" fill="#78350F" rx="1"/>
+          </g>
+
+          <!-- Farmer (drought) -->
+          <g v-if="currentEvent==='DROUGHT'" transform="translate(63,134)" class="a-bob" style="animation-delay:.5s">
+            <ellipse cx="0" cy="-29" rx="13" ry="4.5" fill="#D97706" opacity=".9"/>
+            <rect x="-7" y="-33" width="14" height="7" fill="#F59E0B" rx="2"/>
+            <rect x="-6" y="-24" width="12" height="10" fill="#FDE68A" rx="1"/>
+            <rect x="-4" y="-21" width="2" height="2" fill="#1E293B"/><rect x="2" y="-21" width="2" height="2" fill="#1E293B"/>
+            <line x1="-5" y1="-23" x2="-2" y2="-22" stroke="#78350F" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="2" y1="-22" x2="5" y2="-23" stroke="#78350F" stroke-width="1.5" stroke-linecap="round"/>
+            <rect x="-6" y="-14" width="12" height="12" fill="#78350F" rx="1"/>
+            <rect x="-10" y="-14" width="4" height="10" fill="#78350F" rx="1"/><rect x="6" y="-14" width="4" height="10" fill="#78350F" rx="1"/>
+            <line x1="9" y1="-16" x2="18" y2="-4" stroke="#92400E" stroke-width="2.5" stroke-linecap="round"/>
+            <rect x="-5" y="-2" width="5" height="8" fill="#92400E" rx="1"/><rect x="0" y="-2" width="5" height="8" fill="#92400E" rx="1"/>
+          </g>
+
+          <text x="200" y="226" text-anchor="middle" fill="white" font-size="9.5" font-family="'Noto Serif TC',serif" opacity=".88" font-weight="600" letter-spacing=".5">頭前溪 · Touqian River</text>
+        </svg>
+
+        <!-- Scene overlays -->
+        <div class="absolute top-2 left-2 z-10">
+          <div v-if="currentEvent" :class="['text-white text-xs font-bold px-2 py-1 rounded-lg shadow-md a-crisis',evtBg(currentEvent)]">{{ eventData[currentEvent].icon }} {{ eventData[currentEvent].name }}</div>
+          <div v-else class="bg-white/80 text-[#2C4A21] text-xs font-semibold px-2 py-1 rounded-lg border border-[#A0C49D]">🌤️ 溪流平靜</div>
+        </div>
+        <div class="absolute bottom-2 right-2 z-10 bg-white/85 rounded-lg px-2 py-1 flex items-center gap-1.5">
+          <span class="text-sm">🌿</span>
+          <div class="w-20 pbar"><div class="pfill" :class="riverHealth>=60?'bg-green-500':riverHealth>=30?'bg-yellow-500':'bg-red-500'" :style="`width:${riverHealth}%`"></div></div>
+          <span class="text-xs font-bold" :class="riverHealth>=60?'text-green-700':riverHealth>=30?'text-yellow-700':'text-red-600'">{{ riverHealth.toFixed(0) }}%</span>
+        </div>
+      </div>
+
+      <!-- METRICS -->
+      <div class="grid grid-cols-2 gap-2">
+        <div class="bg-white rounded-2xl p-3 border border-gray-100 shadow-sm">
+          <div class="text-[10px] text-[#8B7E74] font-semibold mb-0.5">💰 晶圓廠市值</div>
+          <div class="text-2xl font-black font-mono" :class="marketValue>500?'text-[#16a34a]':marketValue>120?'text-amber-600':'text-red-600'">{{ marketValue.toFixed(0) }}<span class="text-xs font-bold text-[#8B7E74]"> 億</span></div>
+          <div class="text-[9px] text-gray-400 mt-0.5"><span v-if="marketValue>=2000" class="text-green-600 font-bold">🏆 目標達成！</span><span v-else-if="marketValue>500">📈 穩健成長</span><span v-else-if="marketValue>120">⚠️ 破產線$120億</span><span v-else class="text-red-600 font-bold animate-pulse">💥 即將破產！</span></div>
+        </div>
+        <div class="bg-white rounded-2xl p-3 border border-gray-100 shadow-sm">
+          <div class="text-[10px] text-[#8B7E74] font-semibold mb-0.5">💼 治理預算</div>
+          <div class="text-2xl font-black font-mono text-[#2C4A21]"><span v-if="funds>=10000">{{ (funds/10000).toFixed(1) }}<span class="text-xs font-bold text-[#8B7E74]"> 萬</span></span><span v-else>{{ funds.toLocaleString() }}</span></div>
+          <div class="text-[9px] text-gray-400 mt-0.5"><span v-if="funds>200000">💪 充裕</span><span v-else-if="funds>50000">🔑 適中</span><span v-else class="text-red-500 font-bold">⚡ 資金告急！</span></div>
+        </div>
+        <div class="bg-white rounded-2xl p-3 border border-gray-100 shadow-sm">
+          <div class="text-[10px] text-[#8B7E74] font-semibold mb-0.5">⚙️ 今日稼動率</div>
+          <div class="text-2xl font-black font-mono" :class="flows.rate>=.9?'text-green-600':flows.rate>=.6?'text-amber-600':'text-red-600'">{{ (flows.rate*100).toFixed(0) }}<span class="text-xs font-bold text-[#8B7E74]">%</span></div>
+          <div class="text-[9px] text-gray-400 mt-0.5">缺口{{ flows.deficit.toFixed(0) }}噸 <span v-if="consecutiveLow>0" class="text-red-500 font-bold">｜低稼{{ consecutiveLow }}/3天</span></div>
+        </div>
+        <div class="bg-white rounded-2xl p-3 border border-gray-100 shadow-sm">
+          <div class="text-[10px] text-[#8B7E74] font-semibold mb-0.5">🔬 每日需求</div>
+          <div class="text-2xl font-black font-mono text-purple-700">{{ flows.demand }}<span class="text-xs font-bold text-[#8B7E74]"> 噸</span></div>
+          <div class="text-[9px] text-gray-400 mt-0.5">{{ researched.length }}項技術｜產出{{ flows.upw.toFixed(0) }}噸</div>
+        </div>
+      </div>
+
+      <!-- Low production warning -->
+      <div v-if="consecutiveLow>=2" class="bg-red-50 border-2 border-red-300 rounded-xl p-2.5 text-xs font-bold text-red-700 a-crisis">⚠️ 連續低稼動警告：{{ consecutiveLow }}/3天！再{{ 3-consecutiveLow }}天觸發「信用崩潰」！</div>
+
+      <!-- Water balance -->
+      <div class="bg-white rounded-2xl border border-[#C4D7B2]/50 p-3 shadow-sm">
+        <div class="flex justify-between items-center mb-2 border-b border-[#C4D7B2]/40 pb-1.5">
+          <h3 class="text-xs font-serif font-bold text-[#4A3E3D]">🔄 智慧水網動態衡算</h3>
+          <span class="text-[9px] bg-green-50 text-green-700 border border-green-200 px-1.5 py-0.5 rounded-full font-semibold">即時預估</span>
+        </div>
+        <div class="space-y-1 text-xs text-[#5C544F]">
+          <div class="flex justify-between"><span>河川取水量：</span><span class="font-bold text-blue-700">{{ flows.intake.toFixed(1) }} 噸/日</span></div>
+          <div class="flex justify-between"><span>澄清過濾後：</span><span class="font-bold text-blue-600">{{ flows.filtered.toFixed(1) }} 噸/日</span></div>
+          <div class="flex justify-between"><span>廢水回收補注：</span><span class="font-bold text-emerald-600">+{{ flows.recycled.toFixed(1) }} 噸/日</span></div>
+          <div class="flex justify-between font-semibold border-t border-gray-100 pt-1"><span>UPW 超純水產出：</span><span :class="['font-black',flows.upw>=flows.demand*.95?'text-green-600':'text-red-500']">{{ flows.upw.toFixed(1) }} 噸/日</span></div>
+          <div class="flex justify-between text-red-500"><span>超標直排河川：</span><span class="font-bold">{{ flows.discharge.toFixed(1) }} 噸/日</span></div>
+        </div>
+        <div class="mt-2 bg-[#F5EFE6] rounded-lg p-2 text-[10px] text-[#8B7E74] border border-[#8B7E74]/10">📣 {{ crisisHint }}</div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Tabs -->
+    <section class="xl:col-span-7 bg-white rounded-3xl border-2 border-[#C4D7B2]/50 shadow-md overflow-hidden flex flex-col" style="min-height:600px;">
+      <div class="flex border-b border-[#C4D7B2]/50 bg-[#FAF8F5] flex-shrink-0">
+        <button v-for="t in tabs" :key="t.id" @click="activeTab=t.id" :class="['tab-b flex-1 px-1 py-2.5 text-[9px] sm:text-[11px] font-bold',activeTab===t.id?'act':'text-[#8B7E74] hover:text-[#4A3E3D]']">{{ t.label }}</button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-3 sm:p-4">
+
+        <!-- TAB: Events + Log -->
+        <div v-if="activeTab==='status'" class="space-y-4 a-fdin">
+          <div v-if="currentEvent" :class="['p-4 rounded-2xl text-white shadow-lg',evtGrad(currentEvent)]">
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="flex items-center gap-2 mb-1"><span class="text-xl">{{ eventData[currentEvent].icon }}</span><span class="font-serif font-black text-sm sm:text-base">{{ eventData[currentEvent].name }}</span></div>
+                <p class="text-xs sm:text-sm opacity-90 leading-relaxed">{{ eventData[currentEvent].desc }}</p>
+              </div>
+              <span class="bg-white/25 px-2 py-0.5 rounded-full text-xs font-bold flex-shrink-0 ml-2">剩{{ eventDaysLeft }}天</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-3">
+              <div class="bg-white/15 rounded-xl p-2 text-xs"><div class="font-bold mb-0.5 opacity-80">當前影響</div><div>{{ evtImpact }}</div></div>
+              <div class="bg-white/15 rounded-xl p-2 text-xs"><div class="font-bold mb-0.5 opacity-80">推薦應對</div><div>{{ evtCounter }}</div></div>
+            </div>
+          </div>
+          <div v-else class="p-3 rounded-2xl bg-[#ECFDF5] border border-[#A7F3D0] flex items-start gap-3">
+            <span class="text-2xl">🌤️</span>
+            <div><h4 class="font-serif font-bold text-sm text-[#065F46]">今日溪流平靜，天氣晴好</h4><p class="text-xs text-[#065F46]/80 mt-0.5">趁好天氣，快去研究新技術或升級設施，為下次危機做準備！</p></div>
+          </div>
+          <div>
+            <h3 class="font-serif font-bold text-sm text-[#4A3E3D] border-b border-[#C4D7B2]/40 pb-1.5 mb-3">🌿 頭前溪水務日記</h3>
+            <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+              <p v-if="!dailyLog.length" class="text-xs text-gray-400 italic text-center py-10">今天是小藍上工的第一天，日記本上還飄著新竹山城的清晨草香...</p>
+              <div v-for="(log,idx) in dailyLog" :key="idx" class="bg-[#FAF8F5] rounded-xl p-3 border border-[#C4D7B2]/35 space-y-1.5 a-slin">
+                <div class="flex justify-between items-center">
+                  <span class="text-[10px] font-bold text-[#8B7E74]">📖 第{{ log.day }}天</span>
+                  <div class="flex gap-1">
+                    <span v-if="log.event" :class="['text-[9px] font-bold text-white px-1.5 py-0.5 rounded-full',evtBg(log.event)]">{{ eventData[log.event].icon }}</span>
+                    <span v-if="log.collapse" class="text-[9px] font-bold text-white bg-red-600 px-1.5 py-0.5 rounded-full">💥</span>
+                    <span v-if="log.research" class="text-[9px] font-bold text-white bg-purple-600 px-1.5 py-0.5 rounded-full">🔬</span>
+                  </div>
+                </div>
+                <p class="text-xs text-[#5C544F] italic leading-relaxed font-serif">「 {{ log.story }} 」</p>
+                <div class="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-[#6F6762] border-t border-[#C4D7B2]/30 pt-1.5">
+                  <span>稼動: <strong :class="log.rate>=.9?'text-green-600':log.rate>=.6?'text-amber-600':'text-red-500'">{{ (log.rate*100).toFixed(0) }}%</strong></span>
+                  <span>預算: <strong :class="log.funds>=0?'text-green-600':'text-red-500'">{{ log.funds>=0?'+':'' }}${{ Math.abs(log.funds).toLocaleString() }}</strong></span>
+                  <span>生態: <strong :class="log.eco>=0?'text-green-600':'text-red-500'">{{ log.eco>=0?'+':'' }}{{ log.eco.toFixed(1) }}%</strong></span>
+                  <span v-if="log.fine>0" class="text-red-600 font-bold">⚖️罰款$35,000</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: Facilities -->
+        <div v-if="activeTab==='facilities'" class="space-y-4 a-fdin">
+          <div class="text-xs text-[#8B7E74] bg-blue-50 border-l-4 border-blue-300 p-3 rounded-r-xl leading-relaxed">💡 升級設施可提升取水、過濾和純化能力，是應對各類河川危機的關鍵。</div>
+          <div class="space-y-3">
+            <!-- Pump -->
+            <div class="fcard bg-[#F0F9FF] border border-blue-200 rounded-xl p-3">
+              <div class="flex justify-between items-start gap-2">
+                <div class="flex-1">
+                  <h4 class="font-bold text-sm text-[#1E3A5F] flex items-center gap-1.5">🚰 取水泵浦系統 <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">Lv{{ pumps }}/3</span></h4>
+                  <p class="text-[10px] text-[#8B7E74] mt-0.5">從頭前溪汲取生命的源泉，整個水循環的起點。</p>
+                  <p class="text-xs text-blue-700 mt-1 font-semibold">取水上限：{{ pD.levels[pumps-1].cap }} 噸/日</p>
+                  <div class="flex gap-1 mt-1.5"><div v-for="lv in 3" :key="lv" :class="['w-8 h-1.5 rounded-full',lv<=pumps?'bg-blue-500':'bg-blue-100']"></div></div>
+                </div>
+                <div class="flex-shrink-0">
+                  <button v-if="pumps<3" @click="upFac('pumps',pD.levels[pumps].cost)" :disabled="funds<pD.levels[pumps].cost" :class="['px-3 py-2 text-xs font-bold rounded-xl text-center transition-all',funds>=pD.levels[pumps].cost?'bg-blue-500 hover:bg-blue-600 text-white shadow-md btn-p':'bg-gray-100 text-gray-400 cursor-not-allowed']">升至Lv{{ pumps+1 }}<br/><span class="text-[9px] opacity-80">${{ pD.levels[pumps].cost.toLocaleString() }}</span></button>
+                  <span v-else class="text-xs text-green-600 font-bold bg-green-50 px-3 py-2 rounded-xl border border-green-200 block text-center">✓頂級</span>
+                </div>
+              </div>
+            </div>
+            <!-- Filter -->
+            <div class="fcard bg-[#FFF7ED] border border-amber-200 rounded-xl p-3">
+              <div class="flex justify-between items-start gap-2">
+                <div class="flex-1">
+                  <h4 class="font-bold text-sm text-[#78350F] flex items-center gap-1.5">⏳ 砂濾與混凝澄清槽 <span class="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold">Lv{{ filters }}/3</span></h4>
+                  <p class="text-[10px] text-[#8B7E74] mt-0.5">去除泥沙有機質，是抵禦暴雨高濁度的盾牌。</p>
+                  <p class="text-xs text-amber-700 mt-1 font-semibold">過濾上限{{ fD.levels[filters-1].cap }}噸｜抗濁{{ (fD.levels[filters-1].turbDef*100).toFixed(0) }}%</p>
+                  <div class="flex gap-1 mt-1.5"><div v-for="lv in 3" :key="lv" :class="['w-8 h-1.5 rounded-full',lv<=filters?'bg-amber-500':'bg-amber-100']"></div></div>
+                </div>
+                <div class="flex-shrink-0">
+                  <button v-if="filters<3" @click="upFac('filters',fD.levels[filters].cost)" :disabled="funds<fD.levels[filters].cost" :class="['px-3 py-2 text-xs font-bold rounded-xl text-center transition-all',funds>=fD.levels[filters].cost?'bg-amber-500 hover:bg-amber-600 text-white shadow-md btn-p':'bg-gray-100 text-gray-400 cursor-not-allowed']">升至Lv{{ filters+1 }}<br/><span class="text-[9px] opacity-80">${{ fD.levels[filters].cost.toLocaleString() }}</span></button>
+                  <span v-else class="text-xs text-green-600 font-bold bg-green-50 px-3 py-2 rounded-xl border border-green-200 block text-center">✓頂級</span>
+                </div>
+              </div>
+            </div>
+            <!-- RO -->
+            <div class="fcard bg-[#F0FDF4] border border-green-200 rounded-xl p-3">
+              <div class="flex justify-between items-start gap-2">
+                <div class="flex-1">
+                  <h4 class="font-bold text-sm text-[#14532D] flex items-center gap-1.5">🧪 雙段逆滲透(RO)薄膜 <span class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">Lv{{ roSys }}/3</span></h4>
+                  <p class="text-[10px] text-[#8B7E74] mt-0.5">利用高水壓強行濾過半透膜，產出晶圓級超純水。</p>
+                  <p class="text-xs text-green-700 mt-1 font-semibold">RO產水率：{{ (rD.levels[roSys-1].yield*100).toFixed(0) }}%</p>
+                  <div class="flex gap-1 mt-1.5"><div v-for="lv in 3" :key="lv" :class="['w-8 h-1.5 rounded-full',lv<=roSys?'bg-green-500':'bg-green-100']"></div></div>
+                </div>
+                <div class="flex-shrink-0">
+                  <button v-if="roSys<3" @click="upFac('ro',rD.levels[roSys].cost)" :disabled="funds<rD.levels[roSys].cost" :class="['px-3 py-2 text-xs font-bold rounded-xl text-center transition-all',funds>=rD.levels[roSys].cost?'bg-green-600 hover:bg-green-700 text-white shadow-md btn-p':'bg-gray-100 text-gray-400 cursor-not-allowed']">升至Lv{{ roSys+1 }}<br/><span class="text-[9px] opacity-80">${{ rD.levels[roSys].cost.toLocaleString() }}</span></button>
+                  <span v-else class="text-xs text-green-600 font-bold bg-green-50 px-3 py-2 rounded-xl border border-green-200 block text-center">✓頂級</span>
+                </div>
+              </div>
+            </div>
+            <!-- Recycle -->
+            <div class="fcard bg-[#ECFDF5] border border-emerald-200 rounded-xl p-3">
+              <div class="flex justify-between items-start gap-2">
+                <div class="flex-1">
+                  <h4 class="font-bold text-sm text-[#064E3B] flex items-center gap-1.5">♻️ 製程廢水回收系統 <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">Lv{{ recycle }}/3</span></h4>
+                  <p class="text-[10px] text-[#8B7E74] mt-0.5">洗滌塔廢水分流回收，建立強大的閉環水網。</p>
+                  <p class="text-xs text-emerald-700 mt-1 font-semibold">廢水回收率：{{ (rcD.levels[recycle].rate*100).toFixed(0) }}%</p>
+                  <p v-if="recycle>=1&&recycle<3&&!unlockedTechs.includes('cmp')" class="text-[10px] text-red-500 mt-1 font-bold">⚠️ 需先完成「CMP銅製程研究」</p>
+                  <div class="flex gap-1 mt-1.5"><div v-for="lv in 3" :key="lv" :class="['w-8 h-1.5 rounded-full',lv<=recycle?'bg-emerald-500':'bg-emerald-100']"></div></div>
+                </div>
+                <div class="flex-shrink-0">
+                  <button v-if="recycle<3" @click="upRecycle()" :disabled="!canUpRecycle" :class="['px-3 py-2 text-xs font-bold rounded-xl text-center transition-all',canUpRecycle?'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md btn-p':'bg-gray-100 text-gray-400 cursor-not-allowed']">升至Lv{{ recycle+1 }}<br/><span class="text-[9px] opacity-80">${{ rcD.levels[recycle+1]?.cost.toLocaleString() }}</span></button>
+                  <span v-else class="text-xs text-green-600 font-bold bg-green-50 px-3 py-2 rounded-xl border border-green-200 block text-center">✓ZLD</span>
+                </div>
+              </div>
+            </div>
+            <!-- Wetland -->
+            <div class="fcard bg-[#F0FFF4] border border-teal-200 rounded-xl p-3">
+              <div class="flex justify-between items-start gap-2">
+                <div class="flex-1">
+                  <h4 class="font-bold text-sm text-[#134E4A] flex items-center gap-1.5">🌿 人工生態綠意溼地 <span class="text-[10px] bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full font-bold">Lv{{ wetlands }}/2</span></h4>
+                  <p class="text-[10px] text-[#8B7E74] mt-0.5">以香蒲、蘆葦自然淨化廢水，在歸還河川前消化毒性。</p>
+                  <p class="text-xs text-teal-700 mt-1 font-semibold">淨化容量{{ wD.levels[wetlands].cap }}噸｜生態回復+{{ wD.levels[wetlands].heal }}%/天</p>
+                  <div class="flex gap-1 mt-1.5"><div v-for="lv in 2" :key="lv" :class="['w-10 h-1.5 rounded-full',lv<=wetlands?'bg-teal-500':'bg-teal-100']"></div></div>
+                </div>
+                <div class="flex-shrink-0">
+                  <button v-if="wetlands<2" @click="upFac('wetlands',wD.levels[wetlands+1]?.cost)" :disabled="!wD.levels[wetlands+1]||funds<wD.levels[wetlands+1].cost" :class="['px-3 py-2 text-xs font-bold rounded-xl text-center transition-all',wD.levels[wetlands+1]&&funds>=wD.levels[wetlands+1].cost?'bg-teal-600 hover:bg-teal-700 text-white shadow-md btn-p':'bg-gray-100 text-gray-400 cursor-not-allowed']">升至Lv{{ wetlands+1 }}<br/><span v-if="wD.levels[wetlands+1]" class="text-[9px] opacity-80">${{ wD.levels[wetlands+1].cost.toLocaleString() }}</span></button>
+                  <span v-else class="text-xs text-green-600 font-bold bg-green-50 px-3 py-2 rounded-xl border border-green-200 block text-center">✓頂級</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: Research -->
+        <div v-if="activeTab==='research'" class="space-y-4 a-fdin">
+          <div class="bg-purple-50 border-l-4 border-purple-400 p-3 rounded-r-xl text-xs text-purple-700 leading-relaxed">🔬 <strong>研究調查半導體用水製程</strong>：每項研究都能提升工廠收益，但也會<strong class="text-red-600">永久增加每日超純水需求</strong>。在研究與供水能力之間取得平衡，是真正的考驗！</div>
+          <!-- Demand breakdown -->
+          <div class="bg-white border-2 border-purple-100 rounded-xl p-3">
+            <h4 class="font-bold text-xs text-[#4A3E3D] mb-2">📊 當前每日需求組成：</h4>
+            <div class="space-y-1">
+              <div v-for="m in waterMethods.filter(m=>researched.includes(m.id))" :key="m.id" class="flex justify-between text-xs">
+                <span class="text-[#5C544F]">{{ m.icon }} {{ m.name }}</span>
+                <span class="font-bold text-purple-700">+{{ m.demand }} 噸</span>
+              </div>
+            </div>
+            <div class="border-t border-purple-100 mt-2 pt-2 flex justify-between font-black text-sm">
+              <span>總計需求</span><span class="text-purple-700">{{ totalDemand }} 噸/日</span>
+            </div>
+          </div>
+          <!-- Research items -->
+          <div class="space-y-3">
+            <div v-for="m in waterMethods" :key="m.id" :class="['rounded-xl p-3 border-2 transition-all',researched.includes(m.id)?'bg-purple-50 border-purple-200':researchingId===m.id?'bg-blue-50 border-blue-300':'bg-white border-gray-100 hover:border-purple-200']">
+              <div class="flex justify-between items-start gap-2">
+                <div class="flex-1">
+                  <h4 class="font-bold text-sm flex items-center gap-1.5" :class="researched.includes(m.id)?'text-purple-700':'text-[#4A3E3D]'">
+                    <span class="text-lg">{{ m.icon }}</span>{{ m.name }}
+                    <span v-if="researched.includes(m.id)" class="text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full">✓已研究</span>
+                    <span v-else-if="researchingId===m.id" class="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full animate-pulse">🔬研究中</span>
+                  </h4>
+                  <p class="text-[10px] text-[#8B7E74] mt-0.5 leading-tight">{{ m.desc }}</p>
+                  <div class="flex gap-3 mt-2 text-xs flex-wrap">
+                    <span class="text-red-600 font-bold">📈需求+{{ m.demand }}噸/日</span>
+                    <span class="text-green-600 font-semibold">{{ m.benefit }}</span>
+                  </div>
+                </div>
+                <div class="flex-shrink-0">
+                  <div v-if="researched.includes(m.id)" class="text-green-500 text-xl">✅</div>
+                  <div v-else-if="researchingId===m.id" class="text-center"><div class="text-2xl a-spin">⚙️</div><div class="text-[10px] text-blue-600 font-bold mt-1">{{ researchDaysLeft }}天後</div></div>
+                  <button v-else-if="m.id!=='basic'" @click="startResearch(m)" :disabled="funds<m.cost||!!researchingId" :class="['px-3 py-2 text-xs font-bold rounded-xl text-center transition-all',funds>=m.cost&&!researchingId?'bg-purple-500 hover:bg-purple-600 text-white shadow-md btn-p':'bg-gray-100 text-gray-400 cursor-not-allowed']">研究<br/><span class="text-[9px] opacity-80">${{ m.cost.toLocaleString() }}</span></button>
+                  <div v-else class="text-purple-500 text-xl">🔬</div>
+                </div>
+              </div>
+              <div v-if="researchingId===m.id" class="mt-2 pbar"><div class="pfill bg-blue-500" :style="`width:${((m.days-researchDaysLeft)/m.days)*100}%`"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: Eco Tech -->
+        <div v-if="activeTab==='tech'" class="space-y-4 a-fdin">
+          <div class="text-xs text-[#8B7E74] bg-emerald-50 border-l-4 border-emerald-400 p-3 rounded-r-xl leading-relaxed">🌱 研發生態科技可有效應對特定河川危機，並降低環境損害。</div>
+          <div class="space-y-3">
+            <div v-for="t in techList" :key="t.id" :class="['rounded-xl p-3 border-2',unlockedTechs.includes(t.id)?'bg-[#ECFDF5] border-[#A7F3D0]':'bg-white border-gray-100 hover:border-emerald-200']">
+              <div class="flex justify-between items-start gap-2">
+                <div class="flex-1">
+                  <h4 class="font-bold text-sm flex items-center gap-1.5" :class="unlockedTechs.includes(t.id)?'text-[#065F46]':'text-[#4A3E3D]'">
+                    <span class="text-lg">{{ t.icon }}</span>{{ t.name }}
+                    <span v-if="unlockedTechs.includes(t.id)" class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full">✓已解鎖</span>
+                  </h4>
+                  <p class="text-[10px] text-[#8B7E74] mt-0.5 leading-tight">{{ t.desc }}</p>
+                  <p class="text-xs text-emerald-700 mt-1.5 font-semibold bg-emerald-50 px-2 py-1 rounded-lg">✨ {{ t.effect }}</p>
+                </div>
+                <div class="flex-shrink-0">
+                  <div v-if="unlockedTechs.includes(t.id)" class="text-green-500 text-2xl">✅</div>
+                  <button v-else @click="unlockTech(t)" :disabled="funds<t.cost" :class="['px-3 py-2 text-xs font-bold rounded-xl text-center min-w-[60px] transition-all',funds>=t.cost?'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md btn-p':'bg-gray-100 text-gray-400 cursor-not-allowed']">研發<br/><span class="text-[9px] opacity-80">${{ t.cost.toLocaleString() }}</span></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ===== GAMEOVER ===== -->
+<div v-if="gameState==='gameover'" class="min-h-screen bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center p-4">
+  <div class="max-w-lg w-full a-scup">
+    <div class="bg-white rounded-3xl p-8 text-center space-y-5 shadow-2xl">
+      <div class="flex justify-center">
+        <div class="a-bob">
+          <svg class="pixel" width="80" height="96" viewBox="0 0 20 24" xmlns="http://www.w3.org/2000/svg">
+            <rect x="5" y="0" width="10" height="2" fill="#64748B"/><rect x="4" y="2" width="12" height="1" fill="#94A3B8"/>
+            <rect x="3" y="3" width="14" height="1" fill="#94A3B8"/><rect x="2" y="4" width="16" height="1" fill="#64748B"/>
+            <rect x="5" y="5" width="10" height="7" fill="#FDE68A"/>
+            <rect x="6" y="7" width="2" height="2" fill="#7F1D1D"/><rect x="12" y="7" width="2" height="2" fill="#7F1D1D"/>
+            <rect x="5" y="6" width="2" height="1" fill="#92400E"/><rect x="13" y="6" width="2" height="1" fill="#92400E"/>
+            <rect x="7" y="11" width="2" height="1" fill="#92400E"/><rect x="11" y="11" width="2" height="1" fill="#92400E"/><rect x="9" y="10" width="2" height="1" fill="#92400E"/>
+            <rect x="5" y="12" width="10" height="8" fill="#475569"/>
+            <rect x="8" y="12" width="4" height="2" fill="#94A3B8"/>
+            <rect x="2" y="12" width="3" height="7" fill="#475569"/><rect x="15" y="12" width="3" height="7" fill="#475569"/>
+            <rect x="1" y="17" width="4" height="2" fill="#FDE68A"/><rect x="15" y="17" width="4" height="2" fill="#FDE68A"/>
+            <rect x="6" y="20" width="3" height="4" fill="#334155"/><rect x="11" y="20" width="3" height="4" fill="#334155"/>
+            <rect x="5" y="23" width="5" height="1" fill="#78350F"/><rect x="10" y="23" width="5" height="1" fill="#78350F"/>
+          </svg>
+        </div>
+      </div>
+      <div><h2 class="text-2xl font-serif font-black text-[#1E293B] mb-2">小藍的夢想破滅了...</h2><p class="text-sm text-[#64748B] leading-relaxed">{{ gameoverMsg }}</p></div>
+      <div class="bg-slate-50 rounded-xl p-4 text-sm text-left space-y-2">
+        <h4 class="font-bold text-[#4A3E3D]">📊 最終記錄：</h4>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="bg-white p-2 rounded-lg">撐過 <strong class="text-blue-600">{{ day }} 天</strong></div>
+          <div class="bg-white p-2 rounded-lg">市值 <strong :class="marketValue>120?'text-green-600':'text-red-600'">${{ marketValue.toFixed(0) }} 億</strong></div>
+          <div class="bg-white p-2 rounded-lg">河川健康 <strong :class="riverHealth>60?'text-green-600':'text-red-600'">{{ riverHealth.toFixed(0) }}%</strong></div>
+          <div class="bg-white p-2 rounded-lg">研究項目 <strong class="text-purple-600">{{ researched.length }} 項</strong></div>
+        </div>
+      </div>
+      <button @click="resetGame" class="w-full bg-gradient-to-r from-[#2C4A21] to-[#3A6B35] hover:from-[#1A3014] text-white font-bold py-3 rounded-xl btn-p shadow-[0_4px_0_#1A3014]">🌱 重新守護頭前溪</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== VICTORY ===== -->
+<div v-if="gameState==='victory'" class="min-h-screen bg-gradient-to-br from-emerald-800 via-teal-700 to-cyan-800 flex items-center justify-center p-4">
+  <div class="max-w-lg w-full a-scup">
+    <div class="bg-white rounded-3xl p-8 text-center space-y-5 shadow-2xl">
+      <div class="flex justify-center">
+        <div class="a-float">
+          <svg class="pixel" width="80" height="96" viewBox="0 0 20 24" xmlns="http://www.w3.org/2000/svg">
+            <rect x="5" y="0" width="10" height="2" fill="#1D4ED8"/><rect x="4" y="2" width="12" height="1" fill="#2563EB"/>
+            <rect x="3" y="3" width="14" height="1" fill="#3B82F6"/><rect x="2" y="4" width="16" height="1" fill="#1E40AF"/>
+            <rect x="5" y="5" width="10" height="7" fill="#FDE68A"/>
+            <rect x="6" y="7" width="2" height="2" fill="#1E293B"/><rect x="12" y="7" width="2" height="2" fill="#1E293B"/>
+            <rect x="7" y="7" width="1" height="1" fill="white"/><rect x="13" y="7" width="1" height="1" fill="white"/>
+            <rect x="4" y="9" width="1" height="1" fill="#FCA5A5"/><rect x="15" y="9" width="1" height="1" fill="#FCA5A5"/>
+            <rect x="6" y="10" width="8" height="2" fill="#D97706"/>
+            <rect x="5" y="12" width="10" height="8" fill="#1D4ED8"/>
+            <rect x="8" y="12" width="4" height="2" fill="#60A5FA"/>
+            <rect x="2" y="12" width="3" height="7" fill="#1D4ED8"/><rect x="15" y="12" width="3" height="7" fill="#1D4ED8"/>
+            <rect x="1" y="17" width="4" height="2" fill="#FDE68A"/><rect x="15" y="17" width="4" height="2" fill="#FDE68A"/>
+            <rect x="6" y="20" width="3" height="4" fill="#1E3A5F"/><rect x="11" y="20" width="3" height="4" fill="#1E3A5F"/>
+            <rect x="5" y="23" width="5" height="1" fill="#78350F"/><rect x="10" y="23" width="5" height="1" fill="#78350F"/>
+          </svg>
+        </div>
+      </div>
+      <div><div class="text-5xl mb-3">🏆</div><h2 class="text-2xl font-serif font-black text-[#2C4A21] mb-2">晶圓與自然的和諧！</h2><p class="text-sm text-[#5C544F] leading-relaxed">小藍做到了！頭前溪的潺潺水聲，晶圓廠的機器轟鳴，在這片土地上譜出了最美的交響樂。</p></div>
+      <div class="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 text-sm border border-emerald-200">
+        <h4 class="font-bold text-[#2C4A21] mb-2">🌟 最終成就：</h4>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="bg-white p-2 rounded-lg">堅持 <strong class="text-blue-600">30天</strong> ✓</div>
+          <div class="bg-white p-2 rounded-lg">市值 <strong class="text-green-600">${{ marketValue.toFixed(0) }}億</strong> ✓</div>
+          <div class="bg-white p-2 rounded-lg">生態 <strong class="text-green-600">{{ riverHealth.toFixed(0) }}%</strong> ✓</div>
+          <div class="bg-white p-2 rounded-lg">研究 <strong class="text-purple-600">{{ researched.length }}項</strong></div>
+        </div>
+      </div>
+      <button @click="resetGame" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold py-3 rounded-xl btn-p shadow-[0_4px_0_#065F46]">🌊 再次守護溪流</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DAY SUMMARY MODAL ===== -->
+<div v-if="showSummary&&lastSummary" class="fixed inset-0 modal-bg flex items-center justify-center p-4 z-50" @click.self="showSummary=false">
+  <div class="bg-white max-w-md w-full rounded-3xl border-4 border-[#C4D7B2] p-5 shadow-2xl space-y-4 a-scup max-h-[85vh] overflow-y-auto">
+    <h3 class="font-serif font-bold text-lg text-[#4A3E3D] border-b pb-2">📖 第{{ lastSummary.day }}天的故事落幕了</h3>
+    <div class="bg-[#FAF8F5] p-4 rounded-xl border border-[#C4D7B2]/40"><p class="text-sm text-[#5C544F] italic leading-relaxed font-serif">「 {{ lastSummary.story }} 」</p></div>
+    <div class="grid grid-cols-2 gap-2 text-xs">
+      <div class="bg-slate-50 p-2.5 rounded-xl"><div class="text-gray-500 mb-0.5">今日稼動率</div><div class="font-bold text-base" :class="lastSummary.rate>=.9?'text-green-600':'text-red-500'">{{ (lastSummary.rate*100).toFixed(0) }}%</div></div>
+      <div class="bg-slate-50 p-2.5 rounded-xl"><div class="text-gray-500 mb-0.5">預算變動</div><div class="font-bold text-base" :class="lastSummary.profit>=0?'text-green-600':'text-red-500'">{{ lastSummary.profit>=0?'+':'' }}${{ Math.abs(lastSummary.profit).toLocaleString(undefined,{maximumFractionDigits:0}) }}</div></div>
+      <div class="bg-slate-50 p-2.5 rounded-xl"><div class="text-gray-500 mb-0.5">生態健康變化</div><div class="font-bold text-base" :class="lastSummary.eco>=0?'text-green-600':'text-red-500'">{{ lastSummary.eco>=0?'+':'' }}{{ lastSummary.eco.toFixed(1) }}%</div></div>
+      <div class="bg-slate-50 p-2.5 rounded-xl"><div class="text-gray-500 mb-0.5">純水缺口</div><div class="font-bold text-base" :class="lastSummary.deficit>0?'text-red-500':'text-green-600'">{{ lastSummary.deficit.toFixed(1) }} 噸</div></div>
+    </div>
+    <div v-if="lastSummary.pollutionHit" class="bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl text-xs font-bold">☣️ 化學污染損毀RO膜！市值暴跌15%！</div>
+    <div v-if="lastSummary.fine>0" class="bg-amber-50 border border-amber-200 text-amber-700 p-3 rounded-xl text-xs font-bold">⚖️ 環保局開出罰單！河川健康低於30%，罰款NT$35,000！</div>
+    <div v-if="lastSummary.collapse" class="bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl text-xs font-bold animate-pulse">💥 信用崩潰！連續低稼動，市值大幅重挫！</div>
+    <div v-if="lastSummary.researchDone" class="bg-purple-50 border border-purple-200 text-purple-700 p-3 rounded-xl text-xs font-bold">🎉 研究完成！已解鎖「{{ lastSummary.researchDone }}」，每日需求增加{{ lastSummary.researchDemand }}噸。</div>
+    <button @click="showSummary=false" class="w-full bg-[#C4D7B2] hover:bg-[#A0C49D] text-[#2C4A21] font-bold py-3 rounded-xl border border-[#8B7E74]/20 shadow-[0_3px_0_#8EAF74] btn-p text-sm">繼續守護溪流 🌿</button>
+  </div>
+</div>
+
+<!-- ===== RULES MODAL ===== -->
+<div v-if="showRules" class="fixed inset-0 modal-bg flex items-center justify-center p-4 z-50" @click.self="showRules=false">
+  <div class="bg-white max-w-lg w-full rounded-3xl border-4 border-[#C4D7B2] p-5 shadow-2xl space-y-4 a-scup max-h-[85vh] overflow-y-auto">
+    <h3 class="font-serif font-bold text-lg text-[#4A3E3D] border-b pb-2">📖 水治理工程師手冊</h3>
+    <div class="space-y-3 text-xs leading-relaxed text-[#5C544F]">
+      <div class="bg-purple-50 p-3 rounded-xl border-l-4 border-purple-400"><h4 class="font-bold text-purple-700 mb-1">🔬 研究系統</h4><p>解鎖越多半導體用水技術，收益越高，但每日超純水需求也持續增加！設施升級需跟上需求增長。</p></div>
+      <div class="bg-blue-50 p-3 rounded-xl border-l-4 border-blue-400"><h4 class="font-bold text-blue-700 mb-1">⛈️ 颱風泥沙（Day 5）</h4><p>河水濁度拉高，過濾效能驟降。升級「砂濾澄清槽」可有效抵抗，Lv3可完全無視高濁度。</p></div>
+      <div class="bg-orange-50 p-3 rounded-xl border-l-4 border-orange-400"><h4 class="font-bold text-orange-700 mb-1">☀️ 乾旱奪水（Day 10）</h4><p>溪流乾涸，農民搶水，取水量銳減75%。「農業共生掌水協議」可將影響從75%降至35%。</p></div>
+      <div class="bg-purple-50 p-3 rounded-xl border-l-4 border-purple-600"><h4 class="font-bold text-purple-700 mb-1">☣️ 化學污染（Day 15）</h4><p>若無「活性碳吸附塔」，RO膜損壞，市值暴跌15%！需盡早研發此科技。</p></div>
+      <div class="bg-emerald-50 p-3 rounded-xl border-l-4 border-emerald-400"><h4 class="font-bold text-emerald-700 mb-1">🦠 藻華爆發（Day 20）</h4><p>管線堵塞，每日維護費用倍增。「人工生態濕地」可降低影響。</p></div>
+      <div class="bg-yellow-50 p-3 rounded-xl border-l-4 border-yellow-400"><h4 class="font-bold text-yellow-700 mb-1">⚡ 產能爆炸（Day 25）</h4><p>AI晶片訂單暴增，用水需求×1.5！「廢水閉環回收(ZLD)」是關鍵。</p></div>
+      <div class="bg-red-50 p-3 rounded-xl border-l-4 border-red-400"><h4 class="font-bold text-red-700 mb-1">💥 連續低稼動懲罰</h4><p>連續3天稼動率低於60%，觸發「信用崩潰」，市值一次性重挫20%！</p></div>
+    </div>
+    <button @click="showRules=false" class="w-full bg-[#E4D1B9] hover:bg-[#C4D7B2] text-[#3C3633] font-bold py-2.5 rounded-xl text-sm btn-p">返回守護崗位 ⚙️</button>
+  </div>
+</div>
+
+</div>
+<script>
+const { createApp, ref, computed } = Vue;
+createApp({
+  setup() {
+    // ===== Static Data =====
+    const waterMethods = [
+      { id:'basic', name:'基礎晶圓清洗技術', icon:'🔬', desc:'以去離子水清洗晶圓表面微粒，是半導體製程的起始基礎。', cost:0, demand:100, benefit:'基礎生產能力（起始技術）', days:0, revBonus:0 },
+      { id:'photo', name:'光刻製程用水研究', icon:'💡', desc:'光阻劑清洗與顯影的精密超純水需求，提升晶片良率。', cost:60000, demand:25, benefit:'每日市值增長速度+25%', days:2, revBonus:.25 },
+      { id:'cmp', name:'CMP 銅製程研磨研究', icon:'⚙️', desc:'化學機械平坦化製程的高純度研磨液與廢液精密分流。', cost:80000, demand:30, benefit:'解鎖廢水回收Lv2+，廢水毒性降低15%', days:2, revBonus:.2 },
+      { id:'pkg', name:'先進封裝清洗研究', icon:'📦', desc:'Fan-Out與CoWoS先進封裝製程的超精密清洗需求。', cost:100000, demand:20, benefit:'每日收益加成+20%', days:3, revBonus:.2 },
+      { id:'ai', name:'AI晶片超純水精煉', icon:'🤖', desc:'為2nm AI晶片研發極致超純水技術（TOC<1ppb）。', cost:150000, demand:35, benefit:'市值增速翻倍，解鎖ZLD廢水回收', days:4, revBonus:.5 },
+    ];
+    const pD={name:'取水泵浦系統',levels:[{cap:80,cost:0},{cap:130,cost:40000},{cap:200,cost:90000}]};
+    const fD={name:'砂濾澄清槽',levels:[{cap:80,cost:0,turbDef:.3},{cap:130,cost:50000,turbDef:.7},{cap:200,cost:100000,turbDef:1}]};
+    const rD={name:'雙段逆滲透RO薄膜',levels:[{yield:.65,cost:0},{yield:.78,cost:60000},{yield:.88,cost:120000}]};
+    const rcD={name:'廢水回收系統',levels:[{rate:0,cost:0},{rate:.35,cost:70000},{rate:.65,cost:130000},{rate:.85,cost:200000}]};
+    const wD={name:'人工生態溼地',levels:[{cap:0,heal:0,cost:0},{cap:30,heal:1.5,cost:50000},{cap:80,heal:3.5,cost:110000}]};
+    const techList=[
+      {id:'smart',name:'AI智慧微氣候水網系統',icon:'🌐',desc:'在上游與廠內布放微型感測器，聆聽大自然的脈搏。',cost:70000,effect:'精確預知未來危機，每日折舊費用降低20%。'},
+      {id:'agri',name:'農業共生掌水工協議',icon:'🤝',desc:'與在地農會結盟，乾旱時補貼灌溉借水。',cost:90000,effect:'「乾旱奪水危機」取水限縮從75%減為35%。'},
+      {id:'carbon',name:'活性碳深度化學吸附塔',icon:'🏗️',desc:'設置多層物理活性碳濾膜，攔截劇毒有機化學污染。',cost:65000,effect:'完全免疫「化學外溢污染」對RO膜和市值的打擊。'},
+    ];
+    const eventData={
+      TYPHOON:{name:'梅雨與颱風：滾滾黃沙',desc:'暴雨夾帶巨量泥沙，溪水混濁如奶茶。砂濾系統面臨嚴峻考驗！',icon:'⛈️'},
+      DROUGHT:{name:'夏日枯水：大地的焦渴',desc:'烈日高懸，溪流乾涸見底。農夫和工廠都在搶奪僅剩的細流...',icon:'☀️'},
+      POLLUTION:{name:'上游化學外溢：危機警報',desc:'不明化學溶液自上游流入，若吸入廠區將嚴重腐蝕RO膜！',icon:'☣️'},
+      ALGAE:{name:'藍綠藻華大爆發：綠色窒息',desc:'肥料流失引發優養化，藻類鋪滿河道，管線被膠體堵塞！',icon:'🦠'},
+      EXPANSION:{name:'先進製程投產：市場呼喚',desc:'新一代AI晶片全面投產！三天內純水需求量將提高1.5倍！',icon:'⚡'},
+    };
+
+    // ===== State =====
+    const gameState=ref('intro'); const introStep=ref(0); const day=ref(1);
+    const marketValue=ref(1000); const funds=ref(250000); const riverHealth=ref(85);
+    const consecutiveLow=ref(0); const gameoverMsg=ref('');
+    const pumps=ref(1); const filters=ref(1); const roSys=ref(1); const recycle=ref(0); const wetlands=ref(0);
+    const unlockedTechs=ref([]);
+    const researched=ref(['basic']); const researchingId=ref(null); const researchDaysLeft=ref(0);
+    const currentEvent=ref(null); const eventDaysLeft=ref(0);
+    const dailyLog=ref([]); const activeTab=ref('status');
+    const showSummary=ref(false); const showRules=ref(false); const lastSummary=ref(null);
+    const tabs=[{id:'status',label:'📊 事件與日誌'},{id:'facilities',label:'🏗️ 設施升級'},{id:'research',label:'🔬 研究調查'},{id:'tech',label:'🌱 生態科技'}];
+
+    // ===== Computed =====
+    const totalDemand=computed(()=>waterMethods.filter(m=>researched.value.includes(m.id)).reduce((s,m)=>s+m.demand,0));
+    const totalRevBonus=computed(()=>waterMethods.filter(m=>researched.value.includes(m.id)).reduce((s,m)=>s+(m.revBonus||0),0));
+    const prodOk=computed(()=>flows.value.rate>=.8);
+    const fishPos=computed(()=>{
+      const cnt=Math.max(0,Math.floor(riverHealth.value/18));
+      return Array.from({length:cnt},(_,i)=>({x:40+i*52,y:178+(i%3)*12,c:riverHealth.value>60?'#FF8B8B':riverHealth.value>30?'#E07B7B':'#8B4513'}));
+    });
+    const flows=computed(()=>{
+      const baseFlow=120;
+      let intakeCap=pD.levels[pumps.value-1].cap;
+      let treatCap=fD.levels[filters.value-1].cap;
+      let turbM=1,flowM=1,clogM=1,isPolluted=currentEvent.value==='POLLUTION';
+      if(currentEvent.value==='TYPHOON') turbM=fD.levels[filters.value-1].turbDef;
+      else if(currentEvent.value==='DROUGHT') flowM=unlockedTechs.value.includes('agri')?.65:.25;
+      else if(currentEvent.value==='ALGAE') clogM=wetlands.value>=2?.9:.6;
+      const maxRiver=baseFlow*flowM;
+      const intake=Math.min(intakeCap,maxRiver)*clogM;
+      const filtered=Math.min(intake,treatCap*turbM);
+      const roYield=rD.levels[roSys.value-1].yield;
+      const recycleRate=rcD.levels[recycle.value].rate;
+      const loop=roYield*.9*recycleRate;
+      const feed=filtered/Math.max(.01,1-loop);
+      const upw=feed*roYield;
+      let demand=totalDemand.value;
+      if(currentEvent.value==='EXPANSION') demand=Math.round(demand*1.5);
+      const delivered=Math.min(upw,demand);
+      const deficit=Math.max(0,demand-delivered);
+      const rate=delivered/demand;
+      const ww=delivered*.9;
+      const recycled=ww*recycleRate;
+      const discharged=ww-recycled;
+      const wetCap=wD.levels[wetlands.value].cap;
+      const discharge=Math.max(0,discharged-wetCap);
+      return{intake,filtered,upw:delivered,recycled,discharge,deficit,rate,demand,isPolluted};
+    });
+    const canUpRecycle=computed(()=>{
+      if(recycle.value>=3)return false;
+      const next=recycle.value+1;
+      if(!rcD.levels[next])return false;
+      if(funds.value<rcD.levels[next].cost)return false;
+      if(next>=2&&!unlockedTechs.value.includes('cmp'))return false;
+      if(next>=3&&!researched.value.includes('ai'))return false;
+      return true;
+    });
+    const skyTop=computed(()=>({TYPHOON:'#475569',DROUGHT:'#FCA5A5',POLLUTION:'#C4B5FD'}[currentEvent.value]||'#87CEEB'));
+    const skyBot=computed(()=>({TYPHOON:'#94A3B8',DROUGHT:'#FED7AA',POLLUTION:'#DDD6FE'}[currentEvent.value]||'#E0F2FE'));
+    const waterTop=computed(()=>{
+      if(riverHealth.value<30)return '#92400E';
+      if(riverHealth.value<60)return '#5FAED4';
+      if(currentEvent.value==='ALGAE')return '#10B981';
+      return '#38BDF8';
+    });
+    const waterBot=computed(()=>{
+      if(riverHealth.value<30)return '#78350F';
+      if(riverHealth.value<60)return '#0369A1';
+      if(currentEvent.value==='ALGAE')return '#059669';
+      return '#0284C7';
+    });
+    const crisisHint=computed(()=>{
+      if(!unlockedTechs.value.includes('smart'))return '【智慧水網未解鎖】研發AI智慧感測系統以精確掌握溪流氣象預警。';
+      if(currentEvent.value)return `氣象警報：當前面臨「${eventData[currentEvent.value].name}」（剩${eventDaysLeft.value}天）`;
+      if(day.value<5)return 'AI預測：第5天颱風高濁度！請確保砂濾Lv2+';
+      if(day.value<10)return 'AI預測：第10天乾旱奪水！建議研發農業共生協議';
+      if(day.value<15)return 'AI預測：第15天化學外溢！請研發活性碳吸附塔';
+      if(day.value<20)return 'AI預測：第20天藻華爆發！人工濕地可有效淨化';
+      if(day.value<25)return 'AI預測：第25天產線暴增！建議廢水閉環回收(ZLD)';
+      return '天清日朗，大自然一切和諧。';
+    });
+    const evtImpact=computed(()=>{
+      if(!currentEvent.value)return'';
+      if(currentEvent.value==='TYPHOON')return`砂濾效能${(fD.levels[filters.value-1].turbDef*100).toFixed(0)}%`;
+      if(currentEvent.value==='DROUGHT')return`取水量${unlockedTechs.value.includes('agri')?35:25}%`;
+      if(currentEvent.value==='POLLUTION')return unlockedTechs.value.includes('carbon')?'已防護 ✓':'RO膜危險！';
+      if(currentEvent.value==='ALGAE')return`堵塞${wetlands.value>=2?10:40}%`;
+      return`需求×1.5倍`;
+    });
+    const evtCounter=computed(()=>({TYPHOON:'升砂濾至Lv3',DROUGHT:'農業共生協議',POLLUTION:'活性碳吸附塔',ALGAE:'人工生態濕地',EXPANSION:'廢水ZLD回收'}[currentEvent.value]||''));
+
+    // ===== Methods =====
+    const evtBg=(e)=>({TYPHOON:'bg-slate-600',DROUGHT:'bg-orange-500',POLLUTION:'bg-purple-700',ALGAE:'bg-emerald-700',EXPANSION:'bg-blue-700'}[e]||'bg-gray-600');
+    const evtGrad=(e)=>({TYPHOON:'bg-gradient-to-r from-slate-600 to-slate-800',DROUGHT:'bg-gradient-to-r from-orange-500 to-amber-700',POLLUTION:'bg-gradient-to-r from-purple-600 to-indigo-900',ALGAE:'bg-gradient-to-r from-emerald-700 to-teal-900',EXPANSION:'bg-gradient-to-r from-blue-600 to-indigo-800'}[e]||'bg-gray-700');
+
+    const startGame=()=>{ gameState.value='playing'; };
+    const resetGame=()=>{
+      day.value=1;marketValue.value=1000;funds.value=250000;riverHealth.value=85;consecutiveLow.value=0;
+      pumps.value=1;filters.value=1;roSys.value=1;recycle.value=0;wetlands.value=0;
+      unlockedTechs.value=[];researched.value=['basic'];researchingId.value=null;researchDaysLeft.value=0;
+      currentEvent.value=null;eventDaysLeft.value=0;dailyLog.value=[];activeTab.value='status';
+      showSummary.value=false;showRules.value=false;lastSummary.value=null;introStep.value=0;
+      gameState.value='intro';
+    };
+    const startResearch=(m)=>{
+      if(funds.value<m.cost||researchingId.value||researched.value.includes(m.id))return;
+      funds.value-=m.cost; researchingId.value=m.id; researchDaysLeft.value=m.days;
+    };
+    const upFac=(type,cost)=>{
+      if(cost===undefined||funds.value<cost)return;
+      funds.value-=cost;
+      if(type==='pumps'&&pumps.value<3)pumps.value++;
+      if(type==='filters'&&filters.value<3)filters.value++;
+      if(type==='ro'&&roSys.value<3)roSys.value++;
+      if(type==='wetlands'&&wetlands.value<2)wetlands.value++;
+    };
+    const upRecycle=()=>{
+      if(!canUpRecycle.value)return;
+      funds.value-=rcD.levels[recycle.value+1].cost; recycle.value++;
+    };
+    const unlockTech=(t)=>{
+      if(funds.value<t.cost||unlockedTechs.value.includes(t.id))return;
+      funds.value-=t.cost; unlockedTechs.value.push(t.id);
+      if(t.id==='cmp'&&!unlockedTechs.value.includes('cmp')){}// already pushed above
+    };
+
+    const genStory=(f,ecoChange,newHealth,collapse)=>{
+      if(collapse)return'信用評級崩潰的消息傳遍了新竹科學城。股票殺聲震天，小藍握緊了工程圖，深吸一口氣...';
+      const ev=currentEvent.value;
+      if(ev==='TYPHOON')return f.rate>=.8?'滾滾黃沙湧入，但精密的超濾膜巋然不動。車間的轟鳴聲告訴小藍，這場暴雨無法打敗我們。':'溪水渾濁如泥漿。砂濾池不堪重負，超純水的水位急轉直下，工藝組打來了焦急的電話...';
+      if(ev==='DROUGHT')return unlockedTechs.value.includes('agri')?'下游稻田的水門在傍晚緩緩關上，農人笑著在夕陽裡揮手。因為掌水工協議，細流依然引向工廠。':'溪水只剩下一道淺淺的水痕。小藍站在取水口，看著幾乎乾涸的河床，心裡比烈日還要焦灼...';
+      if(ev==='POLLUTION')return unlockedTechs.value.includes('carbon')?'黑色活性碳塔傲然矗立，像守護森林的黑武士，將看不見的毒素吸附殆盡。晶圓和薄膜平安無事。':'刺鼻的化學氣味瀰漫進車間。昂貴的RO膜遭到腐蝕，晶圓大批報廢，損失慘重...';
+      if(ev==='ALGAE')return'黏稠的藍綠藻把水道塗成了翠綠。小藍帶工人頂著烈日，用竹撈一勺一勺清理管道格柵...';
+      if(ev==='EXPANSION')return f.rate>=.99?'無塵室的機械臂高速起落，全球科技媒體都在讚美。我們用充沛的純水撐起了最先進的晶片。':'超純水箱水位一再跌破紅線。擴產的機台飢渴萬分，缺水導致晶圓排程大亂...';
+      if(newHealth>=80)return'清晨微霧消散，兩隻白鷺在頭前溪淺灘安逸地啄食。河水唱著清亮的歌，這正是小藍來到這裡的意義。';
+      if(newHealth>=45)return'溪水顯得有些疲倦，河岸的水草顏色暗沉了些。工廠的廢水正在考驗著這條老溪的承受極限...';
+      return'小魚無助地翻著白肚皮，水面漂浮著泡沫。頭前溪快要撐不住了。小藍望著河水，眼眶泛紅...';
+    };
+
+    const nextDay=()=>{
+      const f=flows.value;
+      // Revenue
+      let baseRev=48000*(1+totalRevBonus.value);
+      let rev=baseRev*f.rate;
+      let maint=11000*(unlockedTechs.value.includes('smart')?.8:1);
+      let evCost=0;
+      if(currentEvent.value==='ALGAE')evCost+=6000;
+      if(currentEvent.value==='POLLUTION'&&!unlockedTechs.value.includes('carbon'))evCost+=18000;
+      if(unlockedTechs.value.includes('agri')&&currentEvent.value==='DROUGHT')evCost+=4000;
+      const profit=rev-maint-evCost;
+      let newFunds=funds.value+profit;
+      // Market value
+      let mvPct=0;
+      if(f.rate>=.99){mvPct=.03;if(currentEvent.value==='EXPANSION')mvPct=.09;}
+      else{const dr=f.deficit/f.demand;mvPct=-dr*.22;if(currentEvent.value==='EXPANSION')mvPct=-dr*.38;}
+      if(researched.value.includes('photo')&&mvPct>0)mvPct*=1.25;
+      if(researched.value.includes('pkg')&&mvPct>0)mvPct+=.005;
+      if(researched.value.includes('ai')&&mvPct>0)mvPct*=2;
+      let pollutionHit=false;
+      if(f.isPolluted&&!unlockedTechs.value.includes('carbon')&&f.intake>10){pollutionHit=true;mvPct-=.15;}
+      // Credit collapse
+      let collapse=false;
+      let newLow=consecutiveLow.value;
+      if(f.rate<.6){newLow++;if(newLow>=3){mvPct-=.20;collapse=true;newLow=0;}}
+      else{newLow=0;}
+      const newMV=Math.max(0,marketValue.value*(1+mvPct));
+      // Ecology
+      let eco=0;
+      if(f.discharge>0)eco=-f.discharge*(unlockedTechs.value.includes('cmp')?.08:.15);
+      else eco=wD.levels[wetlands.value].heal;
+      if(currentEvent.value==='POLLUTION')eco-=12;
+      const newHealth=Math.max(0,Math.min(100,riverHealth.value+eco));
+      let fine=0;
+      if(newHealth<30){fine=35000;newFunds-=fine;}
+      // Research progress
+      let researchDone=null,researchDoneD=0;
+      if(researchingId.value){
+        const nd=researchDaysLeft.value-1;
+        if(nd<=0){
+          const m=waterMethods.find(m=>m.id===researchingId.value);
+          researched.value.push(researchingId.value);
+          if(researchingId.value==='cmp'&&!unlockedTechs.value.includes('cmp'))unlockedTechs.value.push('cmp');
+          researchDone=m?.name;researchDoneD=m?.demand||0;
+          researchingId.value=null;researchDaysLeft.value=0;
+        } else{researchDaysLeft.value=nd;}
+      }
+      // Story
+      const story=genStory(f,eco,newHealth,collapse);
+      dailyLog.value.unshift({day:day.value,event:currentEvent.value,rate:f.rate,funds:profit-fine,eco,story,fine,collapse,research:!!researchDone});
+      lastSummary.value={day:day.value,rate:f.rate,profit,fine,eco,deficit:f.deficit,story,pollutionHit,collapse,researchDone,researchDemand:researchDoneD};
+      showSummary.value=true;
+      // Apply
+      funds.value=newFunds;marketValue.value=newMV;riverHealth.value=newHealth;consecutiveLow.value=newLow;
+      // Win/lose
+      if(newFunds<=0||newMV<=120){
+        gameoverMsg.value=newFunds<=0?'治理預算告罄，工廠無法維持運作，不得不宣告停工。頭前溪等待著下一位有緣人來守護...':'市值跌破破產警戒線，董事會宣告緊急重組。小藍含淚離開了工廠，頭前溪的風帶走了他最後的嘆息...';
+        gameState.value='gameover';return;
+      }
+      if(day.value>=30){
+        if(newMV>=2000&&newHealth>=80){gameState.value='victory';}
+        else{gameoverMsg.value=`撐過了30天，但未達成目標（市值$${newMV.toFixed(0)}億，生態${newHealth.toFixed(0)}%）。頭前溪還需要更多的愛護...`;gameState.value='gameover';}
+        return;
+      }
+      // Next day + events
+      const nd=day.value+1;day.value=nd;
+      let nEvt=currentEvent.value,nDays=eventDaysLeft.value-1;
+      if(nDays<=0){
+        nEvt=null;nDays=0;
+        if(nd===5){nEvt='TYPHOON';nDays=3;}
+        else if(nd===10){nEvt='DROUGHT';nDays=3;}
+        else if(nd===15){nEvt='POLLUTION';nDays=3;}
+        else if(nd===20){nEvt='ALGAE';nDays=3;}
+        else if(nd===25){nEvt='EXPANSION';nDays=3;}
+      }
+      currentEvent.value=nEvt;eventDaysLeft.value=nDays;
+    };
+
+    return {
+      waterMethods,pD,fD,rD,rcD,wD,techList,eventData,tabs,
+      gameState,introStep,day,marketValue,funds,riverHealth,consecutiveLow,gameoverMsg,
+      pumps,filters,roSys,recycle,wetlands,unlockedTechs,
+      researched,researchingId,researchDaysLeft,currentEvent,eventDaysLeft,
+      dailyLog,activeTab,showSummary,showRules,lastSummary,
+      totalDemand,totalRevBonus,prodOk,fishPos,flows,canUpRecycle,
+      skyTop,skyBot,waterTop,waterBot,crisisHint,evtImpact,evtCounter,
+      evtBg,evtGrad,startGame,resetGame,startResearch,upFac,upRecycle,unlockTech,nextDay,
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
