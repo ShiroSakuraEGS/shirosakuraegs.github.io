@@ -1,0 +1,1783 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hyperpunk - 對戰小遊戲</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+        :root {
+            --neon-blue: #00ffff;
+            --neon-pink: #ff00ff;
+            --neon-green: #00ff00;
+            --neon-yellow: #ffff00;
+            --dark-bg: #05050a;
+            --card-bg: rgba(26, 26, 46, 0.7);
+        }
+
+        body {
+            font-family: 'Orbitron', 'Share Tech Mono', monospace;
+            background: linear-gradient(135deg, #05050a, #101026, #0a1b2a);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .neon-text {
+            text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor;
+        }
+
+        .neon-border {
+            border: 2px solid var(--neon-blue);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.2), inset 0 0 15px rgba(0, 255, 255, 0.1);
+            background: rgba(10, 10, 20, 0.6);
+            backdrop-filter: blur(8px);
+        }
+
+        /* 科技晶片與卡牌面板樣式 */
+        .card, .chip-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: inset 0 0 10px rgba(0, 255, 255, 0.05);
+        }
+
+        /* 晶片上的裝飾線與接點 */
+        .card::before, .chip-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 20px 20px, 20px 20px;
+            pointer-events: none;
+        }
+
+        .card::after, .chip-card::after {
+            content: '';
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            box-shadow: 0 0 6px currentColor;
+            opacity: 0.7;
+        }
+
+        .card:hover, .chip-card:hover {
+            transform: translateY(-6px);
+            border-color: currentColor;
+            box-shadow: 0 8px 20px rgba(0, 255, 255, 0.15), inset 0 0 8px rgba(0, 255, 255, 0.1);
+        }
+
+        .card.selected, .chip-card.selected {
+            transform: translateY(-8px) scale(1.03);
+            border-color: var(--neon-pink) !important;
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.6), inset 0 0 12px rgba(255, 0, 255, 0.2) !important;
+            color: var(--neon-pink) !important;
+        }
+
+        .card.selected::after, .chip-card.selected::after {
+            background: var(--neon-pink);
+            box-shadow: 0 0 8px var(--neon-pink);
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .glitch {
+            animation: glitch 0.3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        .health-bar {
+            background: linear-gradient(90deg, #ff0055, #ff4400);
+            box-shadow: 0 0 10px rgba(255, 0, 85, 0.5);
+            transition: width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .shield-bar {
+            background: linear-gradient(90deg, var(--neon-blue), #0088ff);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+            transition: width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        /* 數值飄浮特效 */
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0) scale(0.8);
+                opacity: 0;
+            }
+            20% {
+                transform: translateY(-15px) scale(1.2);
+                opacity: 1;
+            }
+            80% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-50px) scale(1);
+                opacity: 0;
+            }
+        }
+
+        .floating-text {
+            position: absolute;
+            animation: floatUp 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            pointer-events: none;
+            font-weight: 900;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1.5rem;
+            z-index: 100;
+            text-shadow: 0 0 8px rgba(0, 0, 0, 0.9);
+        }
+
+        /* 畫面受擊震動 */
+        @keyframes shake {
+            0%, 100% { transform: translate(0, 0); }
+            10% { transform: translate(-3px, -2px); }
+            30% { transform: translate(3px, 2px); }
+            50% { transform: translate(-2px, 3px); }
+            70% { transform: translate(2px, 1px); }
+            90% { transform: translate(-1px, -2px); }
+        }
+
+        .shake-anim {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        /* 打字機游標 */
+        .typing-cursor::after {
+            content: '▋';
+            animation: blink 0.8s step-end infinite;
+            color: var(--neon-blue);
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        /* 載入中轉圈特效 */
+        .spinner {
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-top: 2px solid #ffffff;
+            border-radius: 50%;
+            width: 1.25rem;
+            height: 1.25rem;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-4">
+    <!-- 靜音控制按鈕 -->
+    <div class="fixed top-4 right-4 z-50">
+        <button id="toggleMuteBtn" class="bg-gray-900 border border-cyan-500 text-cyan-400 p-3 rounded-full hover:bg-cyan-500 hover:text-black transition-all shadow-[0_0_10px_rgba(0,255,255,0.3)] text-xl font-bold w-12 h-12 flex items-center justify-center">
+            🔊
+        </button>
+    </div>
+    <div class="max-w-7xl w-full">
+        <!-- 遊戲標題 -->
+        <div class="text-center mb-8">
+            <h1 class="text-6xl font-black neon-text text-cyan-400 mb-4">HYPERPUNK</h1>
+            <p class="text-xl text-gray-300">超速資訊網絡對戰</p>
+        </div>
+
+        <!-- 遊戲簡介界面 -->
+        <div id="gameIntro" class="text-center max-w-5xl mx-auto">
+            <div class="neon-border p-6 rounded-lg mb-8 bg-black bg-opacity-50">
+                <h2 class="text-4xl font-bold mb-6 neon-text text-cyan-400">HYPERPUNK 2087</h2>
+
+                <div class="text-center mb-8">
+                    <p class="text-lg text-gray-300 mb-4">
+                        神秘黑客正在對你發動<span class="text-pink-400 font-bold">超量資訊攻擊</span>！<br>
+                        運用你的技術技能，在這場<span class="text-cyan-400 font-bold">未來網絡戰</span>中生存下來！
+                    </p>
+                </div>
+
+                <!-- 核心玩法 -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <!-- 左側：技術系統 -->
+                    <div class="bg-gradient-to-br from-gray-900 to-gray-800 p-4 rounded-lg border border-purple-400">
+                        <h3 class="text-purple-400 font-bold mb-3 text-lg">🛠️ 三大技術系統</h3>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-cyan-400 font-bold">🤖 AI技術</span>
+                                <span class="text-gray-300">攻擊 + 回復</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <span class="text-green-400 font-bold">💻 編程技術</span>
+                                <span class="text-gray-300">防火牆 + 回復</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <span class="text-yellow-400 font-bold">🔧 硬件技術</span>
+                                <span class="text-gray-300">攻擊 + 防火牆</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右側：遊戲機制 -->
+                    <div class="bg-gradient-to-br from-gray-900 to-gray-800 p-4 rounded-lg border border-blue-400">
+                        <h3 class="text-blue-400 font-bold mb-3 text-lg">⚡ 卡牌戰鬥機制</h3>
+                        <div class="space-y-2 text-sm text-gray-300">
+                            <div>• <strong>製作軟件</strong>：生成 5 張隨機技術卡牌</div>
+                            <div>• <strong>配對運行</strong>：選擇 3+ 張同類型卡牌執行技術</div>
+                            <div>• <strong>效果倍率</strong>：3張(1.0×) 4張(1.1×) 5張(1.25×)</div>
+                            <div>• <strong>職業專精</strong>：對應技術獲得 1.5× 加成</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 職業選擇預覽 -->
+                <div class="bg-gradient-to-r from-gray-900 to-gray-800 p-4 rounded-lg border border-pink-400 mb-6">
+                    <h3 class="text-pink-400 font-bold mb-3 text-lg">👤 選擇你的專精職業</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div class="text-center p-3 bg-gray-800 rounded border border-cyan-500">
+                            <div class="text-cyan-400 font-bold">AI架構師</div>
+                            <div class="text-xs text-gray-400 mt-1">AI技術專精 ×1.5</div>
+                        </div>
+                        <div class="text-center p-3 bg-gray-800 rounded border border-green-500">
+                            <div class="text-green-400 font-bold">程式工程師</div>
+                            <div class="text-xs text-gray-400 mt-1">編程技術專精 ×1.5</div>
+                        </div>
+                        <div class="text-center p-3 bg-gray-800 rounded border border-yellow-500">
+                            <div class="text-yellow-400 font-bold">創客</div>
+                            <div class="text-xs text-gray-400 mt-1">硬件技術專精 ×1.5</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 快速指南 -->
+                <div class="bg-gradient-to-r from-orange-900 to-red-900 p-4 rounded-lg border border-orange-400 mb-6">
+                    <h3 class="text-orange-400 font-bold mb-3 text-lg">🎯 快速上手指南</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300">
+                        <div>
+                            <div><strong class="text-red-400">目標：</strong>將黑客生命值降至 0</div>
+                            <div><strong class="text-yellow-400">防火牆：</strong>優先抵擋所有傷害</div>
+                        </div>
+                        <div>
+                            <div><strong class="text-purple-400">時間壓力：</strong>黑客會定時自動攻擊</div>
+                            <div><strong class="text-green-400">策略：</strong>平衡攻擊、防禦、回復</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 開始遊戲按鈕 -->
+                <div class="space-y-4">
+                    <button id="startStoryMode"
+                        class="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white font-bold py-4 px-8 rounded-lg neon-border text-xl transition-all duration-300 transform hover:scale-105 w-full">
+                        📖 劇情模式 - 神秘黑客的邂逅
+                    </button>
+                    <button id="startGameBtn"
+                        class="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-4 px-8 rounded-lg neon-border text-xl transition-all duration-300 transform hover:scale-105 w-full">
+                        ⚔️ 一般對抗模式 - 立即戰鬥
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 職業選擇界面 -->
+        <div id="classSelection" class="text-center hidden">
+            <h2 class="text-3xl font-bold mb-8 neon-text text-pink-400">選擇你的職業</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="card p-6 cursor-pointer" data-class="ai">
+                    <h3 class="text-2xl font-bold text-cyan-400 mb-4">AI架構師</h3>
+                    <p class="text-gray-300 mb-4">專精於人工智慧技術</p>
+                    <p class="text-green-400 font-bold">AI技術效果 ×1.5</p>
+                </div>
+                <div class="card p-6 cursor-pointer" data-class="programmer">
+                    <h3 class="text-2xl font-bold text-cyan-400 mb-4">程式工程師</h3>
+                    <p class="text-gray-300 mb-4">精通編程技術</p>
+                    <p class="text-green-400 font-bold">編程技術效果 ×1.5</p>
+                </div>
+                <div class="card p-6 cursor-pointer" data-class="maker">
+                    <h3 class="text-2xl font-bold text-cyan-400 mb-4">創客</h3>
+                    <p class="text-gray-300 mb-4">硬件製作專家</p>
+                    <p class="text-green-400 font-bold">硬件技術效果 ×1.5</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 遊戲主界面 -->
+        <div id="gameArea" class="hidden">
+            <!-- 戰鬥信息 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+                <!-- 玩家狀態 -->
+                <div id="playerPanel" class="neon-border p-4 rounded-lg relative transition-all duration-300">
+                    <h3 class="text-xl font-bold text-cyan-400 mb-2">玩家狀態</h3>
+                    <div class="mb-2">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span>生命值</span>
+                            <span id="playerHP">100/100</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-3">
+                            <div id="playerHealthBar" class="health-bar h-3 rounded-full" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span>防火牆</span>
+                            <span id="playerShield">0</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div id="playerShieldBar" class="shield-bar h-2 rounded-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-300">
+                        職業：<span id="playerClass" class="text-green-400"></span>
+                    </div>
+                </div>
+
+                <!-- 黑客狀態 -->
+                <div id="hackerPanel" class="neon-border p-4 rounded-lg relative transition-all duration-300">
+                    <h3 class="text-xl font-bold text-pink-400 mb-2">黑客狀態</h3>
+                    <div class="mb-2">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span>生命值</span>
+                            <span id="hackerHP">100/100</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-3">
+                            <div id="hackerHealthBar" class="health-bar h-3 rounded-full" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span>防火牆</span>
+                            <span id="hackerShield">0</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div id="hackerShieldBar" class="shield-bar h-2 rounded-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between text-sm mt-3">
+                        <span>下次攻擊倒數：</span>
+                        <div class="flex items-center space-x-2">
+                            <div class="relative w-12 h-12 flex items-center justify-center">
+                                <svg class="w-full h-full transform -rotate-90">
+                                    <circle cx="24" cy="24" r="18" stroke="#2d2d44" stroke-width="3" fill="transparent" />
+                                    <circle id="timerCircle" cx="24" cy="24" r="18" stroke="var(--neon-pink)" stroke-width="3" fill="transparent"
+                                        stroke-dasharray="113.1" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear" />
+                                </svg>
+                                <span id="hackerTimer" class="absolute text-xs font-bold text-pink-400 font-mono">5s</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 控制面板 -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- 卡牌區域 -->
+                <div class="lg:col-span-2">
+                    <div class="neon-border p-4 rounded-lg">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-bold text-cyan-400">軟件製作</h3>
+                            <button id="generateCards"
+                                class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded neon-border">
+                                製作軟件
+                            </button>
+                        </div>
+
+                        <div id="cardArea" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4 min-h-[150px]">
+                            <!-- 卡牌將在這裡生成 -->
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-gray-300">
+                                3張卡(1.0×) | 4張卡(1.1×) | 5張卡(1.25×)
+                            </div>
+                            <button id="executeAction"
+                                class="bg-green-600 hover:bg-green-700 px-6 py-2 rounded neon-border disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled>
+                                運行
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 戰鬥日誌 -->
+                <div>
+                    <div class="neon-border p-4 rounded-lg h-80 overflow-y-auto">
+                        <h3 class="text-xl font-bold text-pink-400 mb-4">戰鬥日誌</h3>
+                        <div id="battleLog" class="text-sm space-y-2">
+                            <div class="text-gray-400">遊戲開始！準備迎接黑客的攻擊...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 劇情對話界面 -->
+        <div id="storyDialog" class="hidden text-center max-w-4xl mx-auto">
+            <div class="neon-border p-8 rounded-lg mb-8 bg-black bg-opacity-50">
+                <h2 id="storyTitle" class="text-3xl font-bold mb-6 neon-text text-pink-400"></h2>
+
+                <div id="storyContent" class="text-left space-y-4 mb-8 text-gray-300 leading-relaxed">
+                    <!-- 劇情內容將在這裡顯示 -->
+                </div>
+
+                <button id="startBattleBtn"
+                    class="bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-400 hover:to-orange-500 text-white font-bold py-4 px-8 rounded-lg neon-border text-xl transition-all duration-300 transform hover:scale-105">
+                    🎯 開始戰鬥
+                </button>
+            </div>
+        </div>
+
+        <!-- 關卡結果界面 -->
+        <div id="levelResult" class="hidden text-center max-w-4xl mx-auto">
+            <div class="neon-border p-8 rounded-lg mb-8 bg-black bg-opacity-50">
+                <h2 id="levelResultTitle" class="text-4xl font-bold mb-6 neon-text"></h2>
+
+                <div id="levelResultContent" class="text-left space-y-4 mb-8 text-gray-300 leading-relaxed">
+                    <!-- 結果內容將在這裡顯示 -->
+                </div>
+
+                <div id="levelResultButtons" class="space-y-4">
+                    <!-- 按鈕將在這裡顯示 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 遊戲結束界面 -->
+        <div id="gameOver" class="hidden text-center">
+            <h2 id="gameResult" class="text-4xl font-bold mb-4"></h2>
+            <button id="restartGame" class="bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded neon-border text-xl">
+                重新開始
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 音效合成器 (使用 Web Audio API，無需下載外部音檔)
+        class SoundEffects {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            // 初始化音訊環境
+            init() {
+                if (this.ctx) return;
+                try {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContextClass) {
+                        this.ctx = new AudioContextClass();
+                    }
+                } catch (e) {
+                    console.warn("無法創建 AudioContext，音效將被停用:", e);
+                    this.ctx = null;
+                    this.muted = true;
+                }
+            }
+
+            // 確保音訊環境已啟動 (處理瀏覽器安全限制)
+            resume() {
+                try {
+                    this.init();
+                    if (this.ctx && this.ctx.state === 'suspended') {
+                        this.ctx.resume();
+                    }
+                } catch (e) {
+                    console.warn("無法啟動 AudioContext:", e);
+                }
+            }
+
+            // 播放卡牌懸停音效
+            playCardHover() {
+                if (this.muted) return;
+                this.resume();
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(1200, this.ctx.currentTime + 0.05);
+
+                    gain.gain.setValueAtTime(0.015, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.05);
+
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.05);
+                } catch (e) {
+                    console.error("無法播放音效", e);
+                }
+            }
+
+            // 播放點擊/選擇音效
+            playCardClick() {
+                if (this.muted) return;
+                this.resume();
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+                    osc.frequency.setValueAtTime(300, this.ctx.currentTime + 0.04);
+
+                    gain.gain.setValueAtTime(0.06, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
+
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.08);
+                } catch (e) {
+                    console.error("無法播放音效", e);
+                }
+            }
+
+            // 播放技能執行啟動音效
+            playActionExecute() {
+                if (this.muted) return;
+                this.resume();
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(200, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.2);
+
+                    gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
+
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.25);
+                } catch (e) {
+                    console.error("無法播放音效", e);
+                }
+            }
+
+            // 播放雷射/攻擊音效
+            playLaser() {
+                if (this.muted) return;
+                this.resume();
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(1200, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.15);
+
+                    gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.18);
+
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.18);
+                } catch (e) {
+                    console.error("無法播放音效", e);
+                }
+            }
+
+            // 播放修復生命值音效
+            playHeal() {
+                if (this.muted) return;
+                this.resume();
+                if (!this.ctx) return;
+                try {
+                    const osc1 = this.ctx.createOscillator();
+                    const osc2 = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc1.connect(gain);
+                    osc2.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc1.type = 'sine';
+                    osc1.frequency.setValueAtTime(523.25, this.ctx.currentTime); // C5
+                    osc1.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.3);
+
+                    osc2.type = 'sine';
+                    osc2.frequency.setValueAtTime(659.25, this.ctx.currentTime); // E5
+                    osc2.frequency.exponentialRampToValueAtTime(1046.5, this.ctx.currentTime + 0.3);
+
+                    gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
+
+                    osc1.start();
+                    osc2.start();
+                    osc1.stop(this.ctx.currentTime + 0.35);
+                    osc2.stop(this.ctx.currentTime + 0.35);
+                } catch (e) {
+                    console.error("無法播放音效", e);
+                }
+            }
+
+            // 播放防禦/護盾增強音效
+            playShield() {
+                if (this.muted) return;
+                this.resume();
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(250, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(550, this.ctx.currentTime + 0.25);
+
+                    gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
+
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.3);
+                } catch (e) {
+                    console.error("無法播放音效", e);
+                }
+            }
+
+            // 播放受傷/雜訊受損音效
+            playDamage() {
+                if (this.muted) return;
+                this.resume();
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(100, this.ctx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(30, this.ctx.currentTime + 0.25);
+
+                    gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
+
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.25);
+                } catch (e) {
+                    console.error("無法播放音效", e);
+                }
+            }
+
+            // 播放勝利旋律
+            playWin() {
+                if (this.muted) return;
+                this.resume();
+                if (!this.ctx) return;
+                try {
+                    const now = this.ctx.currentTime;
+                    const playTone = (freq, start, duration) => {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, start);
+                        gain.gain.setValueAtTime(0.05, start);
+                        gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+                        osc.start(start);
+                        osc.stop(start + duration);
+                    };
+
+                    playTone(523.25, now, 0.15); // C5
+                    playTone(659.25, now + 0.15, 0.15); // E5
+                    playTone(783.99, now + 0.3, 0.15); // G5
+                    playTone(1046.5, now + 0.45, 0.4); // C6
+                } catch (e) {
+                    console.error("無法播放音效", e);
+                }
+            }
+
+            // 播放失敗旋律
+            playLose() {
+                if (this.muted) return;
+                this.resume();
+                if (!this.ctx) return;
+                try {
+                    const now = this.ctx.currentTime;
+                    const playTone = (freq, start, duration) => {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(freq, start);
+                        gain.gain.setValueAtTime(0.05, start);
+                        gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+                        osc.start(start);
+                        osc.stop(start + duration);
+                    };
+
+                    playTone(392.00, now, 0.2); // G4
+                    playTone(349.23, now + 0.2, 0.2); // F4
+                    playTone(311.13, now + 0.4, 0.2); // Eb4
+                    playTone(261.63, now + 0.6, 0.5); // C4
+                } catch (e) {
+                    console.error("無法播放音效", e);
+                }
+            }
+        }
+
+        class HyperpunkGame {
+            constructor() {
+                this.player = {
+                    hp: 100,
+                    maxHp: 100,
+                    shield: 0,
+                    class: null,
+                    classBonus: 1.5
+                };
+
+                this.hacker = {
+                    hp: 100,
+                    maxHp: 100,
+                    shield: 0
+                };
+
+                this.cards = [];
+                this.selectedCards = [];
+                this.hackerTimer = 5;
+                this.gameInterval = null;
+                this.cardTypes = ['AI技術', '編程技術', '硬件技術'];
+                this.cardColors = {
+                    'AI技術': 'text-cyan-400 border-cyan-400',
+                    '編程技術': 'text-green-400 border-green-400',
+                    '硬件技術': 'text-yellow-400 border-yellow-400'
+                };
+
+                // 劇情模式相關
+                this.storyMode = false;
+                this.currentLevel = 1;
+                this.maxLevel = 4;
+
+                // 限制卡牌生成冷卻 (CPU Overload)
+                this.reloadingCards = false;
+
+                // 實作音效系統
+                this.sounds = new SoundEffects();
+
+                this.init();
+            }
+
+            init() {
+                this.bindEvents();
+                
+                // 處理使用者第一次點擊以啟用音效
+                document.addEventListener('click', () => {
+                    this.sounds.resume();
+                }, { once: true });
+            }
+
+            bindEvents() {
+                // 職業選擇
+                document.querySelectorAll('[data-class]').forEach(card => {
+                    card.addEventListener('click', (e) => {
+                        this.sounds.playCardClick();
+                        this.selectClass(e.currentTarget.dataset.class);
+                    });
+                });
+
+                // 生成卡牌
+                document.getElementById('generateCards').addEventListener('click', () => {
+                    this.generateCards(false); // 玩家手動點擊，會觸發 1.5 秒冷卻
+                });
+
+                // 執行動作
+                document.getElementById('executeAction').addEventListener('click', () => {
+                    this.executeAction();
+                });
+
+                // 重新開始
+                document.getElementById('restartGame').addEventListener('click', () => {
+                    this.sounds.playCardClick();
+                    this.restart();
+                });
+
+                // 開始遊戲按鈕
+                document.getElementById('startGameBtn').addEventListener('click', () => {
+                    this.sounds.playCardClick();
+                    this.storyMode = false;
+                    this.showClassSelection();
+                });
+
+                // 劇情模式按鈕
+                document.getElementById('startStoryMode').addEventListener('click', () => {
+                    this.sounds.playCardClick();
+                    this.storyMode = true;
+                    this.currentLevel = 1;
+                    this.showStoryDialog(1);
+                });
+
+                // 開始戰鬥按鈕
+                document.getElementById('startBattleBtn').addEventListener('click', () => {
+                    this.sounds.playCardClick();
+                    if (this.storyMode && this.currentLevel === 1) {
+                        // 第一關需要選擇職業
+                        this.showClassSelection();
+                    } else {
+                        // 後續關卡直接開始戰鬥
+                        this.startStoryBattle();
+                    }
+                });
+
+                // 靜音開關
+                const toggleMuteBtn = document.getElementById('toggleMuteBtn');
+                if (toggleMuteBtn) {
+                    toggleMuteBtn.addEventListener('click', () => {
+                        this.sounds.muted = !this.sounds.muted;
+                        toggleMuteBtn.textContent = this.sounds.muted ? '🔇' : '🔊';
+                        toggleMuteBtn.classList.toggle('text-cyan-400', !this.sounds.muted);
+                        toggleMuteBtn.classList.toggle('border-cyan-500', !this.sounds.muted);
+                        toggleMuteBtn.classList.toggle('text-gray-500', this.sounds.muted);
+                        toggleMuteBtn.classList.toggle('border-gray-500', this.sounds.muted);
+                        
+                        this.sounds.resume();
+                    });
+                }
+
+                // 綁定動態按鈕事件（將在後面創建）
+                document.addEventListener('click', (e) => {
+                    if (e.target.id === 'nextLevelBtn') {
+                        this.sounds.playCardClick();
+                        this.nextLevel();
+                    } else if (e.target.id === 'restartStoryBtn') {
+                        this.sounds.playCardClick();
+                        this.restartStory();
+                    }
+                });
+            }
+
+            // 打字機特效實作 (防止 HTML 標籤破損)
+            typewriter(element, htmlContent, speed = 15, onComplete = null) {
+                element.innerHTML = '';
+                element.classList.add('typing-cursor');
+                
+                const tokens = [];
+                let i = 0;
+                while (i < htmlContent.length) {
+                    if (htmlContent[i] === '<') {
+                        const endIdx = htmlContent.indexOf('>', i);
+                        if (endIdx !== -1) {
+                            tokens.push({ type: 'tag', content: htmlContent.slice(i, endIdx + 1) });
+                            i = endIdx + 1;
+                            continue;
+                        }
+                    }
+                    tokens.push({ type: 'char', content: htmlContent[i] });
+                    i++;
+                }
+                
+                let currentTokenIdx = 0;
+                const typeNext = () => {
+                    if (currentTokenIdx >= tokens.length) {
+                        element.classList.remove('typing-cursor');
+                        if (onComplete) onComplete();
+                        return;
+                    }
+                    
+                    const token = tokens[currentTokenIdx];
+                    if (token.type === 'tag') {
+                        element.innerHTML += token.content;
+                        currentTokenIdx++;
+                        typeNext(); // 標籤不延遲直接繪製
+                    } else {
+                        element.innerHTML += token.content;
+                        currentTokenIdx++;
+                        setTimeout(typeNext, speed);
+                    }
+                };
+                typeNext();
+            }
+
+            // 飄浮文字特效實作
+            spawnFloatingText(panelId, text, colorClass) {
+                const panel = document.getElementById(panelId);
+                if (!panel) return;
+
+                const floating = document.createElement('div');
+                floating.className = `floating-text ${colorClass}`;
+                floating.textContent = text;
+                
+                const rect = panel.getBoundingClientRect();
+                const x = Math.random() * (rect.width * 0.4) + (rect.width * 0.3);
+                const y = rect.height * 0.35;
+
+                floating.style.left = `${x}px`;
+                floating.style.top = `${y}px`;
+
+                panel.appendChild(floating);
+
+                setTimeout(() => {
+                    floating.remove();
+                }, 1200);
+            }
+
+            // 面板震動特效實作
+            shakePanel(panelId) {
+                const panel = document.getElementById(panelId);
+                if (!panel) return;
+
+                panel.classList.add('shake-anim');
+                document.body.classList.add('shake-anim');
+                
+                setTimeout(() => {
+                    panel.classList.remove('shake-anim');
+                    document.body.classList.remove('shake-anim');
+                }, 400);
+            }
+
+            selectClass(className) {
+                const classNames = {
+                    'ai': 'AI架構師',
+                    'programmer': '程式工程師',
+                    'maker': '創客'
+                };
+
+                this.player.class = className;
+                document.getElementById('playerClass').textContent = classNames[className];
+
+                // 切換到遊戲界面
+                document.getElementById('classSelection').classList.add('hidden');
+                document.getElementById('gameArea').classList.remove('hidden');
+
+                this.startGame();
+            }
+
+            startGame() {
+                this.addLog('遊戲開始！黑客正在準備攻擊...');
+                this.generateCards(true); // 初始手牌瞬發生成
+                this.startHackerTimer();
+            }
+
+            startHackerTimer() {
+                const storyData = this.getStoryData()[this.currentLevel];
+                const interval = this.storyMode ? (storyData?.hackerInterval || 5) : 5;
+                this.hackerTimer = interval;
+
+                this.updateTimerUI(interval);
+
+                this.gameInterval = setInterval(() => {
+                    this.hackerTimer--;
+                    this.updateTimerUI(interval);
+
+                    if (this.hackerTimer <= 0) {
+                        this.hackerAction();
+                        this.hackerTimer = interval;
+                        this.updateTimerUI(interval);
+                    }
+                }, 1000);
+            }
+
+            // 更新倒數進度環與文字狀態
+            updateTimerUI(interval) {
+                const timerVal = document.getElementById('hackerTimer');
+                if (timerVal) {
+                    timerVal.textContent = `${this.hackerTimer}s`;
+                }
+                const circle = document.getElementById('timerCircle');
+                if (circle) {
+                    const percent = Math.max(0, Math.min(1, this.hackerTimer / interval));
+                    const offset = 113.1 * (1 - percent);
+                    circle.style.strokeDashoffset = offset;
+                    
+                    if (this.hackerTimer <= 2) {
+                        circle.setAttribute('stroke', '#ff0055');
+                        circle.classList.add('glitch');
+                    } else {
+                        circle.setAttribute('stroke', 'var(--neon-pink)');
+                        circle.classList.remove('glitch');
+                    }
+                }
+            }
+
+            // 生成手牌（可控制是否跳過冷卻）
+            generateCards(instant = false) {
+                if (!instant && this.reloadingCards) return;
+
+                if (!instant) {
+                    const btn = document.getElementById('generateCards');
+                    if (btn) {
+                        this.reloadingCards = true;
+                        btn.disabled = true;
+                        btn.innerHTML = `<span class="spinner mr-2"></span>系統過載...`;
+                        btn.classList.add('opacity-75');
+
+                        setTimeout(() => {
+                            this.reloadingCards = false;
+                            btn.disabled = false;
+                            btn.innerHTML = `製作軟件`;
+                            btn.classList.remove('opacity-75');
+                        }, 1500);
+                    }
+                    this.sounds.playCardClick();
+                }
+
+                this.cards = [];
+                this.selectedCards = [];
+
+                for (let i = 0; i < 5; i++) {
+                    const type = this.cardTypes[Math.floor(Math.random() * this.cardTypes.length)];
+                    this.cards.push({
+                        id: i,
+                        type: type,
+                        selected: false
+                    });
+                }
+
+                this.renderCards();
+                this.updateExecuteButton();
+            }
+
+            renderCards() {
+                const cardArea = document.getElementById('cardArea');
+                cardArea.innerHTML = '';
+
+                this.cards.forEach(card => {
+                    const cardElement = document.createElement('div');
+                    cardElement.className = `chip-card p-3 cursor-pointer text-center ${this.cardColors[card.type]} ${card.selected ? 'selected' : ''}`;
+                    cardElement.innerHTML = `
+                        <div class="text-sm font-bold">${card.type}</div>
+                    `;
+
+                    // 滑鼠滑過音效
+                    cardElement.addEventListener('mouseenter', () => {
+                        this.sounds.playCardHover();
+                    });
+
+                    // 點擊卡牌選擇與音效
+                    cardElement.addEventListener('click', () => {
+                        this.sounds.playCardClick();
+                        this.toggleCard(card.id);
+                    });
+
+                    cardArea.appendChild(cardElement);
+                });
+            }
+
+            toggleCard(cardId) {
+                const card = this.cards.find(c => c.id === cardId);
+                card.selected = !card.selected;
+
+                if (card.selected) {
+                    this.selectedCards.push(card);
+                } else {
+                    this.selectedCards = this.selectedCards.filter(c => c.id !== cardId);
+                }
+
+                this.renderCards();
+                this.updateExecuteButton();
+            }
+
+            updateExecuteButton() {
+                const button = document.getElementById('executeAction');
+                const typeCount = this.getSelectedTypeCount();
+                const canExecute = Object.values(typeCount).some(count => count >= 3);
+
+                button.disabled = !canExecute;
+            }
+
+            getSelectedTypeCount() {
+                const typeCount = {};
+                this.selectedCards.forEach(card => {
+                    typeCount[card.type] = (typeCount[card.type] || 0) + 1;
+                });
+                return typeCount;
+            }
+
+            executeAction() {
+                const typeCount = this.getSelectedTypeCount();
+                let actionType = null;
+                let cardCount = 0;
+
+                for (const [type, count] of Object.entries(typeCount)) {
+                    if (count >= 3) {
+                        actionType = type;
+                        cardCount = count;
+                        break;
+                    }
+                }
+
+                if (!actionType) return;
+
+                // 播放動作發動音效
+                this.sounds.playActionExecute();
+
+                // 計算倍率與同調超載獎勵
+                let cardMultiplier = 1.0;
+                let fullCompile = false;
+                if (cardCount === 4) {
+                    cardMultiplier = 1.1;
+                } else if (cardCount === 5) {
+                    cardMultiplier = 1.5; // 同調完整編譯 1.5 倍威力獎勵
+                    fullCompile = true;
+                }
+
+                // 應用職業加成
+                const classBonus = this.getClassBonus(actionType);
+                const finalMultiplier = cardMultiplier * classBonus;
+
+                if (fullCompile) {
+                    this.addLog(`⚡【完整編譯】觸發同調超載！威力提升 1.5 倍！`);
+                    document.body.classList.add('glitch');
+                    setTimeout(() => document.body.classList.remove('glitch'), 500);
+                }
+
+                this.performAction(actionType, finalMultiplier, cardCount);
+                this.generateCards(true); // 瞬發生成手牌
+            }
+
+            getClassBonus(actionType) {
+                const bonusMap = {
+                    'ai': 'AI技術',
+                    'programmer': '編程技術',
+                    'maker': '硬件技術'
+                };
+
+                return bonusMap[this.player.class] === actionType ? this.player.classBonus : 1;
+            }
+
+            performAction(type, multiplier, cardCount) {
+                const baseValue = 10; // 基礎數值
+
+                switch (type) {
+                    case 'AI技術':
+                        const aiAttack = Math.floor(baseValue * multiplier);
+                        const aiHeal = Math.floor((baseValue * 0.6) * multiplier);
+                        this.attack(aiAttack, true);
+                        this.heal(aiHeal, true);
+                        this.addLog(`AI技術：造成 ${aiAttack} 點攻擊傷害，回復 ${aiHeal} 點生命值！(${cardCount}張卡)`);
+                        break;
+                    case '編程技術':
+                        const progShield = Math.floor(baseValue * multiplier);
+                        const progHeal = Math.floor((baseValue * 0.5) * multiplier);
+                        this.addShield(progShield, true);
+                        this.heal(progHeal, true);
+                        this.addLog(`編程技術：獲得 ${progShield} 點防火牆，回復 ${progHeal} 點生命值！(${cardCount}張卡)`);
+                        break;
+                    case '硬件技術':
+                        const hwAttack = Math.floor((baseValue * 0.8) * multiplier);
+                        const hwShield = Math.floor((baseValue * 0.7) * multiplier);
+                        this.attack(hwAttack, true);
+                        this.addShield(hwShield, true);
+                        this.addLog(`硬件技術：造成 ${hwAttack} 點攻擊傷害，獲得 ${hwShield} 點防火牆！(${cardCount}張卡)`);
+                        break;
+                }
+            }
+
+            attack(damage, isPlayer) {
+                if (isPlayer) {
+                    const shieldDamage = Math.min(damage, this.hacker.shield);
+                    const actualDamage = Math.max(0, damage - this.hacker.shield);
+                    
+                    this.hacker.shield = Math.max(0, this.hacker.shield - damage);
+                    this.hacker.hp = Math.max(0, this.hacker.hp - actualDamage);
+                    
+                    this.sounds.playLaser();
+                    this.shakePanel('hackerPanel');
+                    
+                    if (shieldDamage > 0) {
+                        this.spawnFloatingText('hackerPanel', `-${shieldDamage} 🛡️`, 'text-cyan-400');
+                    }
+                    if (actualDamage > 0) {
+                        this.spawnFloatingText('hackerPanel', `-${actualDamage} HP`, 'text-rose-500');
+                    }
+                    
+                    this.addLog(`玩家攻擊造成 ${damage} 點傷害！`);
+                } else {
+                    const shieldDamage = Math.min(damage, this.player.shield);
+                    const actualDamage = Math.max(0, damage - this.player.shield);
+                    
+                    this.player.shield = Math.max(0, this.player.shield - damage);
+                    this.player.hp = Math.max(0, this.player.hp - actualDamage);
+                    
+                    this.sounds.playDamage();
+                    this.shakePanel('playerPanel');
+                    
+                    if (shieldDamage > 0) {
+                        this.spawnFloatingText('playerPanel', `-${shieldDamage} 🛡️`, 'text-cyan-400');
+                    }
+                    if (actualDamage > 0) {
+                        this.spawnFloatingText('playerPanel', `-${actualDamage} HP`, 'text-rose-500');
+                    }
+                    
+                    this.addLog(`黑客攻擊造成 ${damage} 點傷害！`);
+                }
+
+                this.updateUI();
+                this.checkGameEnd();
+            }
+
+            addShield(amount, isPlayer) {
+                if (isPlayer) {
+                    this.player.shield += amount;
+                    this.sounds.playShield();
+                    this.spawnFloatingText('playerPanel', `+${amount} 🛡️`, 'text-cyan-400');
+                    this.addLog(`玩家獲得 ${amount} 點防火牆！`);
+                } else {
+                    this.hacker.shield += amount;
+                    this.sounds.playShield();
+                    this.spawnFloatingText('hackerPanel', `+${amount} 🛡️`, 'text-cyan-400');
+                    this.addLog(`黑客獲得 ${amount} 點防火牆！`);
+                }
+
+                this.updateUI();
+            }
+
+            heal(amount, isPlayer) {
+                if (isPlayer) {
+                    const actualHeal = Math.min(this.player.maxHp - this.player.hp, amount);
+                    this.player.hp = Math.min(this.player.maxHp, this.player.hp + amount);
+                    this.sounds.playHeal();
+                    if (actualHeal > 0) {
+                        this.spawnFloatingText('playerPanel', `+${actualHeal} 💚`, 'text-emerald-400');
+                    }
+                    this.addLog(`玩家回復 ${amount} 點生命值！`);
+                } else {
+                    const actualHeal = Math.min(this.hacker.maxHp - this.hacker.hp, amount);
+                    this.hacker.hp = Math.min(this.hacker.maxHp, this.hacker.hp + amount);
+                    this.sounds.playHeal();
+                    if (actualHeal > 0) {
+                        this.spawnFloatingText('hackerPanel', `+${actualHeal} 💚`, 'text-emerald-400');
+                    }
+                    this.addLog(`黑客回復 ${amount} 點生命值！`);
+                }
+
+                this.updateUI();
+            }
+
+            hackerAction() {
+                const actions = ['attack', 'shield', 'heal'];
+                const action = actions[Math.floor(Math.random() * actions.length)];
+
+                switch (action) {
+                    case 'attack':
+                        this.attack(15 + Math.floor(Math.random() * 10), false);
+                        break;
+                    case 'shield':
+                        this.addShield(8 + Math.floor(Math.random() * 5), false);
+                        break;
+                    case 'heal':
+                        this.heal(10 + Math.floor(Math.random() * 8), false);
+                        break;
+                }
+            }
+
+            updateUI() {
+                // 更新玩家狀態
+                document.getElementById('playerHP').textContent = `${this.player.hp}/${this.player.maxHp}`;
+                document.getElementById('playerHealthBar').style.width = `${(this.player.hp / this.player.maxHp) * 100}%`;
+                document.getElementById('playerShield').textContent = this.player.shield;
+                document.getElementById('playerShieldBar').style.width = `${Math.min(100, (this.player.shield / 50) * 100)}%`;
+
+                // 更新黑客狀態
+                document.getElementById('hackerHP').textContent = `${this.hacker.hp}/${this.hacker.maxHp}`;
+                document.getElementById('hackerHealthBar').style.width = `${(this.hacker.hp / this.hacker.maxHp) * 100}%`;
+                document.getElementById('hackerShield').textContent = this.hacker.shield;
+                document.getElementById('hackerShieldBar').style.width = `${Math.min(100, (this.hacker.shield / 50) * 100)}%`;
+            }
+
+            addLog(message) {
+                const battleLog = document.getElementById('battleLog');
+                const logEntry = document.createElement('div');
+                logEntry.textContent = message;
+                logEntry.className = 'text-gray-300';
+                battleLog.appendChild(logEntry);
+                battleLog.scrollTop = battleLog.scrollHeight;
+            }
+
+            checkGameEnd() {
+                if (this.player.hp <= 0) {
+                    if (this.storyMode) {
+                        this.showLevelResult(false);
+                    } else {
+                        this.endGame(false);
+                    }
+                } else if (this.hacker.hp <= 0) {
+                    if (this.storyMode) {
+                        this.showLevelResult(true);
+                    } else {
+                        this.endGame(true);
+                    }
+                }
+            }
+
+            endGame(playerWon) {
+                clearInterval(this.gameInterval);
+
+                const gameResult = document.getElementById('gameResult');
+                if (playerWon) {
+                    this.sounds.playWin();
+                    gameResult.textContent = '勝利！';
+                    gameResult.className = 'text-4xl font-bold mb-4 text-green-400 neon-text';
+                } else {
+                    this.sounds.playLose();
+                    gameResult.textContent = '失敗！';
+                    gameResult.className = 'text-4xl font-bold mb-4 text-red-400 neon-text';
+                }
+
+                document.getElementById('gameArea').classList.add('hidden');
+                document.getElementById('gameOver').classList.remove('hidden');
+            }
+
+            showClassSelection() {
+                document.getElementById('gameIntro').classList.add('hidden');
+                document.getElementById('storyDialog').classList.add('hidden');
+                document.getElementById('classSelection').classList.remove('hidden');
+            }
+
+            getStoryData() {
+                return {
+                    1: {
+                        title: "第一關：初次遭遇",
+                        hackerInterval: 5,
+                        story: `
+                            <div class="bg-gray-900 bg-opacity-70 p-6 rounded-lg border border-cyan-400 mb-6">
+                                <h4 class="text-cyan-400 font-bold mb-4">📅 2087年某日 - 你的日常</h4>
+                                <p class="mb-4">你是一位在超量未來世界生活的天才少年，今天依然在能夠接觸大量新奇資訊的世界快樂的生活著...</p>
+                                <p class="mb-4">突然間，你的腦機連接裝置開始閃爍紅光！</p>
+                            </div>
+                            
+                            <div class="border-l-4 border-red-400 pl-4 my-6 bg-red-900 bg-opacity-30 p-4 rounded">
+                                <p class="text-red-400 font-bold mb-2">⚠️ 系統警告 ⚠️</p>
+                                <p><strong>你：</strong>"這些是什麼？低質且損壞性的資訊攻擊？"</p>
+                                <p><strong>你：</strong>"有黑客正在攻擊我的系統！基於我的職業和才能，我同時擁有AI技術、編程技術、硬件製作技術..."</p>
+                                <p class="text-yellow-400 mt-2"><strong>你：</strong>"是時候對這位未知的黑客展開對決了！"</p>
+                            </div>
+                        `,
+                        victory: {
+                            title: "第一關勝利！",
+                            content: `
+                                <div class="bg-green-900 bg-opacity-70 p-6 rounded-lg border border-green-400 mb-6">
+                                    <h4 class="text-green-400 font-bold mb-4">🎉 成功抵禦攻擊！</h4>
+                                    <p class="mb-4">你成功運用你的技術組合，擊退了第一波攻擊！</p>
+                                    <p class="text-cyan-400">你的腦機連接裝置重新穩定，但你感覺到這只是開始...</p>
+                                </div>
+                                
+                                <div class="bg-gradient-to-r from-purple-900 to-pink-900 p-4 rounded-lg border border-purple-400">
+                                    <h4 class="text-purple-400 font-bold mb-2">🎁 獲得獎勵</h4>
+                                    <p class="text-sm">✨ 解鎖更強的防護協議</p>
+                                    <p class="text-sm">✨ 獲得黑客的注意</p>
+                                </div>
+                            `,
+                            hasNext: true
+                        },
+                        defeat: {
+                            title: "第一關失敗...",
+                            content: `
+                                <div class="bg-red-900 bg-opacity-70 p-6 rounded-lg border border-red-400 mb-6">
+                                    <h4 class="text-red-400 font-bold mb-4">💥 系統崩潰</h4>
+                                    <p class="mb-4">你的腦機連接裝置已被損毀，無法連結超量資訊網絡。</p>
+                                    <p class="text-gray-400">在這個依賴網絡的世界中，你暫時失去了與外界的聯繫...</p>
+                                </div>
+                            `,
+                            hasNext: false
+                        }
+                    },
+                    2: {
+                        title: "第二關：意外的挑戰",
+                        hackerInterval: 4,
+                        story: `
+                            <div class="bg-pink-900 bg-opacity-70 p-6 rounded-lg border border-pink-400 mb-6">
+                                <h4 class="text-pink-400 font-bold mb-4">💕 黑客的回應</h4>
+                                <p class="mb-4">你成功抵禦了攻擊，但突然收到了一則訊息...</p>
+                            </div>
+                            
+                            <div class="border-l-4 border-pink-400 pl-4 my-6 bg-pink-900 bg-opacity-30 p-4 rounded">
+                                <p class="text-pink-400 font-bold mb-2">💬 神秘黑客</p>
+                                <p><strong>黑客：</strong>"呀~ 沒想到你這麼厲害呢！♪"</p>
+                                <p><strong>黑客：</strong>"我是個可愛的讓男女也會心動的黑客哦~ (◕‿◕)♡"</p>
+                                <p><strong>黑客：</strong>"要不要跟我再玩一場呢？贏了的話會有特別的獎勵喔~ ☆"</p>
+                                <p class="text-cyan-400 mt-2"><strong>你：</strong>"...什麼情況？不過我倒是有點好奇了。"</p>
+                            </div>
+                        `,
+                        victory: {
+                            title: "第二關勝利！",
+                            content: `
+                                <div class="bg-green-900 bg-opacity-70 p-6 rounded-lg border border-green-400 mb-6">
+                                    <h4 class="text-green-400 font-bold mb-4">🎊 再次獲勝！</h4>
+                                    <p class="mb-4">你再次展現了你的技術實力！黑客似乎對你更加感興趣了...</p>
+                                </div>
+                                
+                                <div class="bg-gradient-to-r from-pink-900 to-purple-900 p-4 rounded-lg border border-pink-400">
+                                    <h4 class="text-pink-400 font-bold mb-2">🎁 特別獎勵</h4>
+                                    <p class="text-sm">📸 獲得了黑客的清涼照片 (◕‿◕)♡</p>
+                                    <p class="text-sm">✨ 神秘黑客對你產生了興趣</p>
+                                    <p class="text-xs text-gray-400 mt-2">*照片已加密保存到你的私人資料庫*</p>
+                                </div>
+                            `,
+                            hasNext: true
+                        },
+                        defeat: {
+                            title: "第二關失敗...",
+                            content: `
+                                <div class="bg-red-900 bg-opacity-70 p-6 rounded-lg border border-red-400 mb-6">
+                                    <h4 class="text-red-400 font-bold mb-4">🔥 過熱損毀</h4>
+                                    <p class="mb-4">你的腦機連接裝置因過熱損毀，你的大腦損失了部分功能。</p>
+                                    <p class="text-gray-400">記憶開始模糊，你漸漸忘記了剛才的一切...</p>
+                                </div>
+                            `,
+                            hasNext: false
+                        }
+                    },
+                    3: {
+                        title: "第三關：意外的約會提議",
+                        hackerInterval: 3,
+                        story: `
+                            <div class="bg-yellow-900 bg-opacity-70 p-6 rounded-lg border border-yellow-400 mb-6">
+                                <h4 class="text-yellow-400 font-bold mb-4">☕ 24小時後</h4>
+                                <p class="mb-4">這24小時你跟黑客保持著聯絡，竟然開始互相產生了好感...</p>
+                            </div>
+                            
+                            <div class="border-l-4 border-yellow-400 pl-4 my-6 bg-yellow-900 bg-opacity-30 p-4 rounded">
+                                <p class="text-cyan-400 font-bold mb-2">💭 你的想法</p>
+                                <p><strong>你：</strong>"最近城裡新開了一家咖啡店，聽說蛋糕很不錯..."</p>
+                                <p><strong>你：</strong>"不如我向祂提出挑戰，如果我贏了，祂就答應跟我去那裡！"</p>
+                            </div>
+                            
+                            <div class="border-l-4 border-pink-400 pl-4 my-6 bg-pink-900 bg-opacity-30 p-4 rounded">
+                                <p class="text-pink-400 font-bold mb-2">💬 對話</p>
+                                <p><strong>你：</strong>"想不想去新開的咖啡店？如果我贏了這場對決..."</p>
+                                <p><strong>黑客：</strong>"咖啡店約會嗎？聽起來很不錯呢~ ♪"</p>
+                                <p><strong>黑客：</strong>"好啊！如果你能贏的話，我就答應跟你去'約會'哦~ (´∀｀)♡"</p>
+                            </div>
+                        `,
+                        victory: {
+                            title: "第三關勝利！",
+                            content: `
+                                <div class="bg-green-900 bg-opacity-70 p-6 rounded-lg border border-green-400 mb-6">
+                                    <h4 class="text-green-400 font-bold mb-4">💕 約會成功！</h4>
+                                    <p class="mb-4">你成功贏得了這場對決！黑客答應了你的約會提議！</p>
+                                </div>
+                                
+                                <div class="bg-gradient-to-r from-pink-900 to-purple-900 p-4 rounded-lg border border-pink-400">
+                                    <h4 class="text-pink-400 font-bold mb-2">🎭 真實見面</h4>
+                                    <p class="text-sm mb-2">你們約在了咖啡店見面...</p>
+                                    <p class="text-sm mb-2">到了現場，你看到了一位令人驚豔的人物：</p>
+                                    <p class="text-sm">✨ 漂亮可愛並性感</p>
+                                    <p class="text-sm">✨ 戴著時尚的頸帶</p>
+                                    <p class="text-sm">✨ 穿著舒適的衛衣</p>
+                                    <p class="text-sm">✨ 雌雄同體的迷人氣質</p>
+                                    <p class="text-xs text-gray-400 mt-2">*這就是你的神秘對手的真面目...*</p>
+                                </div>
+                            `,
+                            hasNext: true
+                        },
+                        defeat: {
+                            title: "第三關失敗...",
+                            content: `
+                                <div class="bg-red-900 bg-opacity-70 p-6 rounded-lg border border-red-400 mb-6">
+                                    <h4 class="text-red-400 font-bold mb-4">🧠 記憶消失</h4>
+                                    <p class="mb-4">你的腦機連接裝置因過熱損毀，你忘記了黑客這個人。</p>
+                                    <p class="text-gray-400">就像從未發生過一樣，這段特別的邂逅煙消雲散...</p>
+                                </div>
+                            `,
+                            hasNext: false
+                        }
+                    },
+                    4: {
+                        title: "第四關：最終對決",
+                        hackerInterval: 2.5,
+                        story: `
+                            <div class="bg-purple-900 bg-opacity-70 p-6 rounded-lg border border-purple-400 mb-6">
+                                <h4 class="text-purple-400 font-bold mb-4">💖 好感度迅速上升</h4>
+                                <p class="mb-4">見面後兩人的好感度迅速上升，黑客甚至開始依偎在你身上...</p>
+                            </div>
+                            
+                            <div class="border-l-4 border-purple-400 pl-4 my-6 bg-purple-900 bg-opacity-30 p-4 rounded">
+                                <p class="text-purple-400 font-bold mb-2">💕 最後的誘惑</p>
+                                <p><strong>黑客：</strong>"你真的很厲害呢... (輕撫你的手臂)"</p>
+                                <p><strong>黑客：</strong>"要不要來最後一場對決呢？♪"</p>
+                                <p><strong>黑客：</strong>"如果你贏了... 我的身心都是你的了哦~ ♡"</p>
+                                <p><strong>黑客：</strong>"但是如果輸了的話... 我們也會一輩子在一起的~ (◕‿◕)"</p>
+                                <p class="text-cyan-400 mt-2"><strong>你：</strong>"這... 聽起來無論如何都是好結果？"</p>
+                                <p class="text-yellow-400"><strong>黑客：</strong>"嘻嘻~ 就是這樣哦~ ☆"</p>
+                            </div>
+                        `,
+                        victory: {
+                            title: "真正的勝利！",
+                            content: `
+                                <div class="bg-green-900 bg-opacity-70 p-6 rounded-lg border border-green-400 mb-6">
+                                    <h4 class="text-green-400 font-bold mb-4">🎊 完美結局！</h4>
+                                    <p class="mb-4">你成功贏了黑客！祂興奮地撲向你...</p>
+                                </div>
+                                
+                                <div class="bg-gradient-to-r from-pink-900 to-purple-900 p-4 rounded-lg border border-pink-400">
+                                    <h4 class="text-pink-400 font-bold mb-2">💕 幸福美滿</h4>
+                                    <p class="text-sm mb-2">黑客興奮地帶你去了旅館...</p>
+                                    <p class="text-sm mb-2">你成功用了不到48小時就找到了人生重要的另一半</p>
+                                    <p class="text-sm mb-2">✨ 你的靈魂伴侶</p>
+                                    <p class="text-sm">✨ 超量未來世界的常態</p>
+                                    <p class="text-xs text-gray-400 mt-2">*這就是幸福美滿的未來社會可能性...*</p>
+                                </div>
+                                
+                                <div class="bg-gradient-to-r from-yellow-900 to-orange-900 p-4 rounded-lg border border-yellow-400">
+                                    <h4 class="text-yellow-400 font-bold mb-2">🏆 劇情模式完成！</h4>
+                                    <p class="text-sm">恭喜完成所有關卡！
+通關獎勵：
+https://sites.google.com/view/hyperpunk-sakuraegs/通關獎勵</p>
+                                </div>
+                            `,
+                            hasNext: false
+                        },
+                        defeat: {
+                            title: "另一種結局...",
+                            content: `
+                                <div class="bg-purple-900 bg-opacity-70 p-6 rounded-lg border border-purple-400 mb-6">
+                                    <h4 class="text-purple-400 font-bold mb-4">🧠 意識改寫</h4>
+                                    <p class="mb-4">你的腦機連接裝置因過熱損毀，你的大腦被串改...</p>
+                                    <p class="mb-4">你成為了黑客的囊中物，但祂也真的與你一輩子在一起</p>
+                                </div>
+                                
+                                <div class="bg-gradient-to-r from-pink-900 to-purple-900 p-4 rounded-lg border border-pink-400">
+                                    <h4 class="text-pink-400 font-bold mb-2">💕 特殊結局</h4>
+                                    <p class="text-sm mb-2">在超量未來社會規則下：</p>
+                                    <p class="text-sm mb-2">✨ 這也是真的可以獲得幸福美滿人生的方式</p>
+                                    <p class="text-sm">✨ 用現在沒有的技術與科技讓人獲得幸福</p>
+                                    <p class="text-xs text-gray-400 mt-2">*另一種形式 of happy ending？*</p>
+                                </div>
+                                
+                                <div class="bg-gradient-to-r from-yellow-900 to-orange-900 p-4 rounded-lg border border-yellow-400">
+                                    <h4 class="text-yellow-400 font-bold mb-2">🏆 劇情模式完成！</h4>
+                                    <p class="text-sm">恭喜完成所有關卡！</p>
+                                </div>
+                            `,
+                            hasNext: false
+                        }
+                    }
+                };
+            }
+
+            showStoryDialog(level) {
+                const storyData = this.getStoryData()[level];
+
+                document.getElementById('storyTitle').textContent = storyData.title;
+                
+                const storyContent = document.getElementById('storyContent');
+                storyContent.innerHTML = '';
+                
+                // 暫時禁用開始戰鬥按鈕直到打字完畢
+                const startBattleBtn = document.getElementById('startBattleBtn');
+                if (startBattleBtn) {
+                    startBattleBtn.disabled = true;
+                    startBattleBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+
+                // 呼叫打字機特效
+                this.typewriter(storyContent, storyData.story, 15, () => {
+                    if (startBattleBtn) {
+                        startBattleBtn.disabled = false;
+                        startBattleBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+                });
+
+                // 隱藏其他界面，顯示劇情對話
+                document.getElementById('gameIntro').classList.add('hidden');
+                document.getElementById('classSelection').classList.add('hidden');
+                document.getElementById('gameArea').classList.add('hidden');
+                document.getElementById('levelResult').classList.add('hidden');
+                document.getElementById('storyDialog').classList.remove('hidden');
+
+                // 設置黑客攻擊間隔
+                this.hackerTimer = storyData.hackerInterval;
+            }
+
+            showLevelResult(victory) {
+                clearInterval(this.gameInterval);
+
+                const storyData = this.getStoryData()[this.currentLevel];
+                const resultData = victory ? storyData.victory : storyData.defeat;
+
+                document.getElementById('levelResultTitle').textContent = resultData.title;
+                document.getElementById('levelResultTitle').className = victory ?
+                    'text-4xl font-bold mb-6 neon-text text-green-400' :
+                    'text-4xl font-bold mb-6 neon-text text-red-400';
+
+                // 打字機播放關卡結果內容
+                const levelResultContent = document.getElementById('levelResultContent');
+                levelResultContent.innerHTML = '';
+                this.typewriter(levelResultContent, resultData.content, 15);
+
+                // 創建按鈕
+                const buttonsContainer = document.getElementById('levelResultButtons');
+                buttonsContainer.innerHTML = '';
+
+                if (victory && resultData.hasNext && this.currentLevel < this.maxLevel) {
+                    const nextButton = document.createElement('button');
+                    nextButton.id = 'nextLevelBtn';
+                    nextButton.className = 'bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-400 hover:to-blue-500 text-white font-bold py-4 px-8 rounded-lg neon-border text-xl transition-all duration-300 transform hover:scale-105 w-full mb-4';
+                    nextButton.textContent = '🚀 前往下一關';
+                    buttonsContainer.appendChild(nextButton);
+                }
+
+                const restartButton = document.createElement('button');
+                restartButton.id = 'restartStoryBtn';
+                restartButton.className = 'bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-400 hover:to-pink-500 text-white font-bold py-4 px-8 rounded-lg neon-border text-xl transition-all duration-300 transform hover:scale-105 w-full';
+                restartButton.textContent = '🔄 重新開始劇情';
+                buttonsContainer.appendChild(restartButton);
+
+                // 隱藏遊戲界面，顯示結果界面
+                document.getElementById('gameArea').classList.add('hidden');
+                document.getElementById('levelResult').classList.remove('hidden');
+            }
+
+            nextLevel() {
+                this.currentLevel++;
+                this.resetGameStateKeepClass();
+                this.showStoryDialog(this.currentLevel);
+            }
+
+            restartStory() {
+                this.currentLevel = 1;
+                this.storyMode = true;
+                this.resetGameState();
+                this.restart();
+            }
+
+            resetGameState() {
+                this.player = {
+                    hp: 100,
+                    maxHp: 100,
+                    shield: 0,
+                    class: this.player.class, // 保持職業選擇
+                    classBonus: 1.5
+                };
+
+                this.hacker = {
+                    hp: 100,
+                    maxHp: 100,
+                    shield: 0
+                };
+
+                this.cards = [];
+                this.selectedCards = [];
+
+                if (this.gameInterval) {
+                    clearInterval(this.gameInterval);
+                }
+            }
+
+            resetGameStateKeepClass() {
+                this.player = {
+                    hp: 100,
+                    maxHp: 100,
+                    shield: 0,
+                    class: this.player.class, // 保持職業選擇
+                    classBonus: 1.5
+                };
+
+                this.hacker = {
+                    hp: 100,
+                    maxHp: 100,
+                    shield: 0
+                };
+
+                this.cards = [];
+                this.selectedCards = [];
+
+                if (this.gameInterval) {
+                    clearInterval(this.gameInterval);
+                }
+            }
+
+            startStoryBattle() {
+                // 隱藏劇情對話，直接開始戰鬥
+                document.getElementById('storyDialog').classList.add('hidden');
+                document.getElementById('gameArea').classList.remove('hidden');
+
+                const classNames = {
+                    'ai': 'AI架構師',
+                    'programmer': '程式工程師',
+                    'maker': '創客'
+                };
+
+                // 更新顯示的職業名稱
+                document.getElementById('playerClass').textContent = classNames[this.player.class];
+
+                this.startGame();
+            }
+
+            restart() {
+                // 重置遊戲狀態
+                this.player = {
+                    hp: 100,
+                    maxHp: 100,
+                    shield: 0,
+                    class: null,
+                    classBonus: 1.5
+                };
+
+                this.hacker = {
+                    hp: 100,
+                    maxHp: 100,
+                    shield: 0
+                };
+
+                this.cards = [];
+                this.selectedCards = [];
+                this.hackerTimer = 5;
+                this.storyMode = false;
+                this.currentLevel = 1;
+
+                if (this.gameInterval) {
+                    clearInterval(this.gameInterval);
+                }
+
+                // 重置UI回到簡介頁面
+                document.getElementById('gameOver').classList.add('hidden');
+                document.getElementById('gameArea').classList.add('hidden');
+                document.getElementById('classSelection').classList.add('hidden');
+                document.getElementById('storyDialog').classList.add('hidden');
+                document.getElementById('levelResult').classList.add('hidden');
+                document.getElementById('gameIntro').classList.remove('hidden');
+                document.getElementById('battleLog').innerHTML = '<div class="text-gray-400">遊戲開始！準備迎接黑客的攻擊...</div>';
+            }
+        }
+
+        // 初始化遊戲
+        const game = new HyperpunkGame();
+    </script>
+</body>
+
+</html>
